@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>온라인 과제평가 시스템 | Online Assignment Evaluation</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F5F4F2;
+  --surface: #ffffff;
+  --surface2: #F9F8F6;
+  --surface3: #EEECEA;
+  --border: #E2DED9;
+  --border2: #ccc;
+  --accent: #E87722;
+  --accent-dark: #c05a0a;
+  --accent2: #E87722;
+  --accent-light: #f5a055;
+  --accent3: #2A7D4F;
+  --gold: #c8900a;
+  --red: #C8410A;
+  --text: #1a1a1a;
+  --text2: #444;
+  --text3: #777;
+  --text4: #bbb;
+  --s-color: #1a6b3a;
+  --a-color: #1A4F6B;
+  --bp-color: #4A3A8C;
+  --b-color: #6b5c1a;
+  --c-color: #8c3a2a;
+  --shadow: 0 1px 3px rgba(200,72,0,.07), 0 4px 16px rgba(200,72,0,.05);
+  --shadow-lg: 0 4px 24px rgba(200,72,0,.12), 0 1px 4px rgba(200,72,0,.06);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Noto Sans KR',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+body::after {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:9999;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.02'/%3E%3C/svg%3E");
+  opacity:0.4;
+}
+.screen { display:none; min-height:100vh; }
+.screen.active { display:flex; flex-direction:column; }
+.d-none { display:none !important; }
+
+/* ── SPLASH ── */
+#splash {
+  background: linear-gradient(135deg, #FFF4E8 0%, #FDE8CC 100%);
+  align-items:center; justify-content:center; position:relative; overflow:hidden;
+}
+.sp-grid { position:absolute; inset:0; background-image:linear-gradient(rgba(232,119,34,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(232,119,34,0.06) 1px,transparent 1px); background-size:60px 60px; }
+.sp-deco { position:absolute; font-family:'Bebas Neue',sans-serif; color:rgba(232,119,34,.05); font-size:260px; line-height:1; right:-30px; bottom:-30px; user-select:none; }
+.sp-inner { position:relative; z-index:1; text-align:center; padding:0 24px; max-width:600px; }
+.sp-badge { display:inline-block; padding:5px 18px; border:1px solid rgba(232,119,34,.3); font-size:11px; letter-spacing:4px; color:var(--text3); text-transform:uppercase; margin-bottom:32px; animation:fadeUp .6s ease both; }
+.sp-title { font-family:'Noto Sans KR',sans-serif; font-weight:900; font-size:clamp(56px,10vw,110px); line-height:1.05; color:var(--text); margin-bottom:10px; letter-spacing:-2px; animation:fadeUp .6s ease .1s both; }
+.sp-title span { color:var(--accent); }
+.sp-sub { font-size:14px; color:var(--text3); margin-bottom:52px; letter-spacing:.5px; animation:fadeUp .6s ease .2s both; }
+.sp-btn { display:inline-flex; align-items:center; gap:12px; padding:16px 44px; background:var(--accent); color:#fff; border:none; font-family:'Noto Sans KR',sans-serif; font-size:15px; font-weight:800; cursor:pointer; letter-spacing:.5px; transition:all .2s; animation:fadeUp .6s ease .3s both; box-shadow:0 4px 18px rgba(232,119,34,.3); }
+.sp-btn:hover { background:var(--accent-dark); transform:translateY(-2px); box-shadow:0 8px 30px rgba(232,119,34,.35); }
+@keyframes fadeUp { from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);} }
+
+/* ── LOGIN ── */
+#login { background:var(--bg); align-items:center; justify-content:center; }
+.login-wrap { width:100%; max-width:480px; padding:24px; }
+.login-back { display:inline-flex; align-items:center; gap:6px; background:none; border:none; color:var(--text3); font-size:13px; cursor:pointer; margin-bottom:40px; font-family:inherit; transition:color .2s; }
+.login-back:hover { color:var(--accent); }
+.login-card { background:var(--surface); border:1px solid var(--border); padding:40px; box-shadow:var(--shadow-lg); border-top:3px solid var(--accent); }
+.login-logo { font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:3px; color:var(--accent); margin-bottom:24px; }
+.login-h { font-size:26px; font-weight:800; margin-bottom:6px; }
+.login-sub { font-size:12px; color:var(--text3); margin-bottom:28px; line-height:1.6; }
+.tab-row { display:flex; border-bottom:2px solid var(--border); margin-bottom:28px; }
+.tab-btn { flex:1; padding:12px; background:none; border:none; border-bottom:2px solid transparent; margin-bottom:-2px; cursor:pointer; font-size:13px; font-weight:600; color:var(--text3); font-family:inherit; transition:all .2s; }
+.tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); }
+.form-group { margin-bottom:16px; }
+.form-label { display:block; font-size:11px; font-weight:700; color:var(--text2); margin-bottom:7px; letter-spacing:1.5px; text-transform:uppercase; }
+.form-input { width:100%; padding:12px 14px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font-size:14px; outline:none; transition:border .2s; font-family:inherit; }
+.form-input:focus { border-color:var(--accent); background:var(--surface); }
+.form-input::placeholder { color:var(--text4); }
+.login-btn { width:100%; padding:14px; background:var(--accent); color:#fff; border:none; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; letter-spacing:.5px; transition:all .2s; margin-top:4px; }
+.login-btn:hover { background:var(--accent-dark); }
+.login-err { color:var(--red); font-size:12px; margin-top:12px; text-align:center; display:none; }
+.login-hint { margin-top:18px; padding:12px 14px; background:var(--surface2); border-left:3px solid var(--accent); font-size:12px; color:var(--text3); line-height:1.9; }
+
+/* ── APP LAYOUT ── */
+.app-layout { display:flex; height:100vh; overflow:hidden; }
+.sidebar { width:280px; flex-shrink:0; background:#18213a; display:flex; flex-direction:column; overflow:hidden; }
+.sb-top { padding:20px; border-bottom:1px solid rgba(255,255,255,0.08); }
+.sb-logo { font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:3px; color:var(--accent); }
+.sb-prog { font-size:11px; color:rgba(255,255,255,0.4); margin-top:3px; letter-spacing:.5px; }
+.sb-user { padding:14px 20px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; gap:11px; }
+.sb-av { width:38px; height:38px; background:var(--accent); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800; color:#fff; }
+.sb-name { font-size:13px; font-weight:700; color:#fff; }
+.sb-dept { font-size:11px; color:rgba(255,255,255,0.4); margin-top:2px; }
+.sb-tabs { display:flex; gap:6px; padding:10px 14px; border-bottom:1px solid rgba(255,255,255,0.06); }
+.sb-tab { flex:1; padding:8px 4px; background:rgba(255,255,255,0.06); border:none; color:rgba(255,255,255,0.5); font-size:11px; font-weight:700; cursor:pointer; font-family:inherit; letter-spacing:.5px; transition:all .2s; }
+.sb-tab.on { background:var(--accent); color:#fff; }
+.sb-search-wrap { padding:10px 12px; border-bottom:1px solid rgba(255,255,255,0.06); }
+.sb-search { width:100%; padding:8px 12px; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.1); color:#fff; font-size:12px; outline:none; font-family:inherit; }
+.sb-search::placeholder { color:rgba(255,255,255,0.3); }
+.sb-list { flex:1; overflow-y:auto; padding:6px; }
+.sb-item { padding:10px 12px; cursor:pointer; margin-bottom:2px; border:1px solid transparent; transition:background .15s; }
+.sb-item:hover { background:rgba(255,255,255,0.06); }
+.sb-item.on { background:rgba(232,119,34,0.25); border-color:rgba(232,119,34,0.5); }
+.sb-item-name { font-size:13px; font-weight:700; color:#fff; }
+.sb-item-sub { font-size:11px; color:rgba(255,255,255,0.4); margin-top:2px; }
+.sb-item-badges { display:flex; gap:5px; margin-top:5px; flex-wrap:wrap; align-items:center; }
+.bd { padding:2px 7px; font-size:10px; font-weight:700; }
+.bd-done { background:rgba(42,125,79,0.35); color:#6effc4; }
+.bd-todo { background:rgba(200,65,10,0.2); color:#ffbbbb; }
+.bd-grade { background:rgba(255,255,255,0.1); color:#fff; font-size:10px; font-weight:800; }
+.bd-score { font-size:10px; color:rgba(255,255,255,0.45); }
+.sb-foot { padding:12px 14px; border-top:1px solid rgba(255,255,255,0.08); }
+.sb-foot-btn { width:100%; padding:9px; background:rgba(255,255,255,0.07); border:none; color:rgba(255,255,255,0.55); font-size:12px; font-weight:700; cursor:pointer; font-family:inherit; transition:all .2s; }
+.sb-foot-btn:hover { background:rgba(255,255,255,0.13); color:#fff; }
+.sb-foot-btn.red { background:rgba(200,65,10,0.15); color:rgba(255,140,120,0.9); }
+
+/* ── MAIN ── */
+.main-area { flex:1; display:flex; flex-direction:column; overflow:hidden; background:var(--bg); }
+.main-hdr { padding:18px 28px; border-bottom:1px solid var(--border); border-top:3px solid var(--accent); background:var(--surface); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+.main-title { font-size:20px; font-weight:800; }
+.main-sub { font-size:12px; color:var(--text3); margin-top:2px; }
+.autosave-ind { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text4); }
+.as-dot { width:6px; height:6px; border-radius:50%; background:var(--text4); transition:background .3s; }
+.as-dot.saved { background:var(--accent3); }
+.main-body { flex:1; overflow-y:auto; padding:24px 28px; }
+
+/* ── ADMIN NAV ── */
+.admin-nav { display:flex; padding:0 28px; background:var(--surface); border-bottom:1px solid var(--border); flex-shrink:0; }
+.anav-btn { padding:13px 16px; background:none; border:none; border-bottom:2px solid transparent; margin-bottom:-1px; cursor:pointer; font-size:13px; font-weight:600; color:var(--text3); font-family:inherit; transition:all .2s; }
+.anav-btn.on { color:var(--accent); border-bottom-color:var(--accent); }
+
+/* ── EVAL FORM ── */
+.cand-card { background:linear-gradient(135deg,var(--accent),var(--accent-dark)); color:#fff; padding:22px 26px; margin-bottom:16px; position:relative; overflow:hidden; border-radius:2px; }
+.cand-card::before { content:'EVAL'; font-family:'Bebas Neue',sans-serif; font-size:110px; position:absolute; right:-8px; bottom:-18px; color:rgba(255,255,255,0.06); line-height:1; }
+.cand-card-name { font-size:22px; font-weight:800; margin-bottom:3px; }
+.cand-card-id { font-size:11px; color:rgba(255,255,255,0.55); margin-bottom:12px; letter-spacing:1px; }
+.cand-card-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+.ccf label { font-size:10px; color:rgba(255,255,255,0.45); letter-spacing:1.5px; text-transform:uppercase; display:block; margin-bottom:3px; }
+.ccf span { font-size:12px; font-weight:600; color:rgba(255,255,255,0.9); }
+
+.total-bar { display:flex; align-items:center; justify-content:space-between; background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--accent); padding:16px 20px; margin-bottom:16px; }
+.total-lbl { font-size:11px; font-weight:700; color:var(--text3); letter-spacing:2px; text-transform:uppercase; }
+.total-nums { display:flex; align-items:baseline; gap:4px; margin-top:4px; }
+.total-big { font-family:'Bebas Neue',sans-serif; font-size:48px; line-height:1; color:var(--accent); }
+.total-denom { font-size:14px; color:var(--text3); }
+.grade-box { display:flex; align-items:center; justify-content:center; width:60px; height:60px; font-family:'Bebas Neue',sans-serif; font-size:32px; }
+.g-S { background:var(--s-color); color:#fff; }
+.g-A { background:var(--a-color); color:#fff; }
+.g-Bp { background:var(--bp-color); color:#fff; }
+.g-B { background:var(--b-color); color:#fff; }
+.g-C { background:var(--c-color); color:#fff; }
+.g-none { background:var(--surface3); color:var(--text3); font-size:20px; }
+
+.sec-hdr { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+.sec-tag { font-size:10px; font-weight:800; letter-spacing:2px; padding:4px 10px; background:var(--accent); color:#fff; text-transform:uppercase; flex-shrink:0; }
+.sec-pct { font-size:10px; font-weight:700; color:var(--accent); padding:4px 10px; background:rgba(200,72,0,0.1); border:1px solid rgba(200,72,0,0.25); flex-shrink:0; }
+.sec-line { flex:1; height:1px; background:var(--border); }
+
+/* ── CRITERIA CARD ── */
+.criteria-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+.ci { background:var(--surface); border:1px solid var(--border); padding:15px 16px; transition:border-color .2s; }
+.ci:hover { border-color:var(--border2); }
+.ci-cat { font-size:10px; font-weight:800; letter-spacing:2px; text-transform:uppercase; margin-bottom:5px; }
+.cat-common { color:var(--accent); }
+.cat-learn { color:#1a6b5c; }
+.cat-fb { color:#6b1a6b; }
+.cat-comm { color:var(--gold); }
+.cat-part { color:#6b3a1a; }
+.ci-q { margin-bottom:10px; }
+.ci-q-ko { font-weight:600; color:var(--text2); display:block; margin-bottom:2px; font-size:12px; line-height:1.5; }
+.ci-q-en { color:var(--text3); font-size:10.5px; display:block; font-style:italic; line-height:1.5; }
+
+/* ── GUIDE TOGGLE ── */
+.guide-toggle { display:flex; align-items:center; gap:5px; background:var(--surface2); border:1px solid var(--border); padding:4px 9px; font-size:10px; font-weight:700; color:var(--accent); cursor:pointer; width:fit-content; margin-bottom:10px; transition:all .2s; letter-spacing:.5px; }
+.guide-toggle:hover { background:var(--surface3); }
+.guide-panel { display:none; background:var(--surface2); border:1px solid var(--border); border-left:3px solid var(--accent); padding:11px 13px; margin-bottom:10px; }
+.guide-panel.open { display:block; }
+.guide-row { padding:6px 0; border-bottom:1px solid var(--border); font-size:11px; line-height:1.5; }
+.guide-row:last-child { border-bottom:none; padding-bottom:0; }
+.guide-score { font-family:'Bebas Neue',sans-serif; font-size:15px; color:var(--accent); margin-right:6px; }
+.guide-level { font-weight:700; color:var(--text2); font-size:10px; margin-right:5px; }
+.guide-ko { display:block; color:var(--text2); margin-bottom:2px; }
+.guide-en { display:block; color:var(--text3); font-style:italic; font-size:10px; }
+
+/* ── SCORE CTRL ── */
+.score-ctrl { display:flex; gap:6px; margin-top:4px; }
+.sc-btn {
+  flex:1; height:40px; border:2px solid var(--border); background:var(--surface2);
+  cursor:pointer; font-size:15px; font-weight:800; color:var(--text3);
+  display:flex; align-items:center; justify-content:center;
+  transition:all .15s; border-radius:2px; font-family:'Bebas Neue',sans-serif;
+  letter-spacing:0;
+}
+.sc-btn:hover { border-color:var(--accent); color:var(--accent); background:rgba(232,119,34,0.06); }
+.sc-btn.selected { background:var(--accent); color:#fff; border-color:var(--accent); }
+.sc-score-label { font-size:10px; color:var(--text4); text-align:right; margin-top:3px; }
+
+/* ── ATTENDANCE ── */
+.attend-section { background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--gold); padding:15px 18px; margin-bottom:16px; }
+.attend-title { font-size:11px; font-weight:800; color:var(--text2); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:12px; }
+.attend-btns { display:flex; gap:10px; }
+.attend-btn { flex:1; padding:11px 8px; border:2px solid var(--border); background:var(--surface2); cursor:pointer; font-family:inherit; font-size:13px; font-weight:700; color:var(--text3); transition:all .2s; text-align:center; }
+.attend-btn:hover { border-color:var(--accent); color:var(--accent); }
+.attend-btn.sel-attend { border-color:var(--accent3); background:rgba(45,106,79,0.1); color:var(--accent3); }
+.attend-btn.sel-partial { border-color:var(--gold); background:rgba(200,144,10,0.1); color:var(--gold); }
+.attend-btn.sel-absent { border-color:var(--red); background:rgba(184,50,50,0.1); color:var(--red); }
+.attend-sub { font-size:10px; color:currentColor; opacity:.7; display:block; margin-top:2px; font-weight:400; }
+
+/* ── TEXT / SUBMIT ── */
+.text-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+.tc { background:var(--surface); border:1px solid var(--border); padding:15px 16px; }
+.tc-lbl { font-size:11px; font-weight:800; color:var(--text2); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:9px; display:flex; align-items:center; gap:7px; }
+.tc-lbl span { padding:3px 7px; font-size:10px; }
+.lbl-good { background:#e8f5ef; color:var(--accent3); }
+.lbl-improve { background:#fff0e0; color:var(--gold); }
+.eval-ta { width:100%; min-height:100px; padding:11px 12px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font-size:12px; resize:vertical; outline:none; font-family:inherit; line-height:1.6; transition:border .2s; }
+.eval-ta:focus { border-color:var(--accent); background:var(--surface); }
+.eval-ta::placeholder { color:var(--text4); }
+.submit-btn { width:100%; padding:15px; background:var(--accent); color:#fff; border:none; font-size:14px; font-weight:800; cursor:pointer; font-family:inherit; letter-spacing:.5px; transition:all .2s; }
+.submit-btn:hover { background:var(--accent-dark); }
+.submit-hint { font-size:11px; color:var(--text4); text-align:center; margin-top:8px; }
+
+/* ── REVIEWER DASHBOARD ── */
+.rv-dash-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:20px; }
+.rv-stat { background:var(--surface); border:1px solid var(--border); padding:18px 20px; border-top:3px solid var(--accent); }
+.rv-stat-lbl { font-size:10px; font-weight:700; color:var(--text3); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:7px; }
+.rv-stat-val { font-family:'Bebas Neue',sans-serif; font-size:40px; line-height:1; color:var(--accent); }
+.grade-breakdown { background:var(--surface); border:1px solid var(--border); padding:18px 20px; margin-bottom:20px; }
+.gbk-title { font-size:12px; font-weight:800; margin-bottom:12px; }
+.grade-row { display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid var(--border); }
+.grade-row:last-child { border-bottom:none; }
+.gr-lbl { width:28px; font-family:'Bebas Neue',sans-serif; font-size:17px; }
+.gr-desc { font-size:10px; color:var(--text4); width:48px; flex-shrink:0; }
+.gr-bar { flex:1; height:6px; background:var(--surface3); }
+.gr-fill { height:100%; transition:width .8s; }
+.gr-cnt { font-size:11px; font-weight:700; color:var(--text2); width:32px; text-align:right; }
+
+/* ── ADMIN DASHBOARD ── */
+.stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }
+.stat-card { background:var(--surface); border:1px solid var(--border); padding:18px 20px; border-top:3px solid var(--accent); border-radius:2px; }
+.stat-icon { font-size:20px; margin-bottom:9px; }
+.stat-val { font-family:'Bebas Neue',sans-serif; font-size:36px; line-height:1; color:var(--accent); }
+.stat-lbl { font-size:11px; color:var(--text3); margin-top:3px; }
+.table-card { background:var(--surface); border:1px solid var(--border); overflow:hidden; margin-bottom:20px; }
+.tbl-toolbar { padding:13px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.tbl-title { font-size:13px; font-weight:700; }
+.fsel { padding:6px 10px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font-size:12px; outline:none; cursor:pointer; font-family:inherit; }
+.tbl { width:100%; border-collapse:collapse; }
+.tbl thead th { padding:8px 12px; text-align:left; font-size:10px; font-weight:800; color:var(--text3); letter-spacing:1.5px; text-transform:uppercase; border-bottom:1px solid var(--border); background:var(--surface2); }
+.tbl tbody tr { border-bottom:1px solid var(--border); transition:background .15s; cursor:pointer; }
+.tbl tbody tr:hover { background:var(--surface2); }
+.tbl tbody tr:last-child { border-bottom:none; }
+.tbl td { padding:10px 12px; font-size:12px; vertical-align:middle; }
+.td-name { font-weight:700; font-size:13px; }
+.dept-tag { display:inline-block; padding:2px 6px; background:var(--surface2); border:1px solid var(--border); font-size:10px; color:var(--text2); }
+.score-cell { display:flex; align-items:center; gap:6px; }
+.mini-bar { flex:1; height:4px; background:var(--surface3); }
+.mini-fill { height:100%; background:var(--accent2); }
+.score-txt { font-size:11px; font-weight:700; color:var(--accent); width:28px; }
+
+/* ── SETTINGS ── */
+.settings-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.settings-card { background:var(--surface); border:1px solid var(--border); padding:20px; }
+.sc-title { font-size:13px; font-weight:800; margin-bottom:14px; display:flex; align-items:center; gap:7px; }
+.sc-title::before { content:''; width:3px; height:15px; background:var(--accent); display:block; flex-shrink:0; }
+.group-item { border:1px solid var(--border); padding:12px 14px; margin-bottom:8px; background:var(--surface2); }
+.group-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.group-name-inp { font-size:13px; font-weight:700; background:none; border:none; outline:none; color:var(--text); font-family:inherit; flex:1; }
+.group-del { background:none; border:none; color:var(--text3); cursor:pointer; font-size:13px; }
+.group-del:hover { color:var(--red); }
+.member-chips { display:flex; flex-wrap:wrap; gap:5px; }
+.chip { padding:3px 8px; background:var(--surface3); border:1px solid var(--border); font-size:11px; display:flex; align-items:center; gap:3px; }
+.chip-del { background:none; border:none; cursor:pointer; color:var(--text3); font-size:11px; }
+.chip-del:hover { color:var(--red); }
+.add-row { display:flex; gap:6px; margin-top:6px; }
+.add-inp { flex:1; padding:6px 9px; border:1px solid var(--border); background:var(--surface); font-size:12px; outline:none; font-family:inherit; color:var(--text); }
+.add-inp:focus { border-color:var(--accent); }
+.add-btn-sm { padding:6px 12px; background:var(--accent); color:#fff; border:none; font-size:11px; font-weight:700; cursor:pointer; font-family:inherit; transition:all .2s; }
+.add-btn-sm:hover { background:var(--accent-dark); }
+.save-btn { width:100%; padding:11px; background:var(--accent); color:#fff; border:none; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; letter-spacing:.5px; transition:all .2s; margin-top:12px; }
+.save-btn:hover { background:var(--accent-dark); }
+.sheets-row { display:flex; align-items:center; gap:7px; margin-bottom:14px; }
+.sh-dot { width:8px; height:8px; border-radius:50%; background:var(--text4); flex-shrink:0; }
+.sh-dot.ok { background:var(--accent3); }
+.sh-txt { font-size:12px; color:var(--text3); }
+.code-block { background:#18213a; color:#f5c88a; padding:14px 16px; font-family:monospace; font-size:10.5px; line-height:2; overflow-x:auto; margin-top:12px; border-radius:2px; }
+
+/* ── SYNC BANNER ── */
+#sync-banner { position:fixed; top:0; left:0; right:0; z-index:9998; background:var(--accent); color:#fff; font-size:12px; font-weight:700; text-align:center; padding:8px; display:none; transition:background .3s; }
+
+/* ── MODAL ── */
+.modal-ov { display:none; position:fixed; inset:0; background:rgba(26,33,58,.6); backdrop-filter:blur(4px); z-index:1000; align-items:center; justify-content:center; }
+.modal-ov.open { display:flex; }
+.modal { background:var(--surface); border:1px solid var(--border); border-top:3px solid var(--accent); padding:28px; width:100%; max-width:640px; max-height:88vh; overflow-y:auto; position:relative; box-shadow:var(--shadow-lg); border-radius:2px; }
+.modal-close { position:absolute; top:14px; right:14px; background:var(--surface2); border:1px solid var(--border); width:28px; height:28px; cursor:pointer; font-size:13px; display:flex; align-items:center; justify-content:center; color:var(--text2); }
+.modal-name { font-size:20px; font-weight:800; margin-bottom:2px; }
+.modal-sub { font-size:12px; color:var(--text3); margin-bottom:16px; }
+.modal-total-row { padding:12px 16px; background:var(--accent); color:#fff; display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+.modal-total-lbl { font-size:12px; font-weight:700; }
+.modal-total-val { font-family:'Bebas Neue',sans-serif; font-size:30px; }
+.modal-grade { font-family:'Bebas Neue',sans-serif; font-size:22px; }
+.modal-score-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:14px; }
+.modal-si { padding:8px 11px; background:var(--surface2); display:flex; justify-content:space-between; align-items:center; }
+.modal-sk { font-size:11px; color:var(--text2); }
+.modal-sv { font-size:13px; font-weight:800; color:var(--accent); }
+.modal-cb { background:var(--surface2); padding:11px 13px; font-size:12px; color:var(--text2); line-height:1.6; margin-bottom:6px; }
+.modal-cl { font-size:10px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; color:var(--text3); margin-bottom:5px; }
+
+/* ── TOAST ── */
+.toast { position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(80px); z-index:5000; background:#1a1a1a; color:#fff; padding:10px 24px; border-radius:100px; font-size:13px; font-weight:600; box-shadow:var(--shadow-lg); opacity:0; transition:all .3s; white-space:nowrap; }
+.toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+
+/* ── EMPTY ── */
+.empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:70px 20px; color:var(--text3); }
+.empty-icon { font-size:38px; margin-bottom:10px; opacity:.5; }
+.empty-txt { font-size:13px; }
+
+::-webkit-scrollbar { width:5px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border2); }
+</style>
+</head>
+<body>
+
+<div id="sync-banner"></div>
+
+<!-- SPLASH -->
+<div id="splash" class="screen active">
+  <div class="sp-grid"></div>
+  <div class="sp-deco">EVAL</div>
+  <div class="sp-inner">
+    <div class="sp-badge">Daewoong Pharmaceutical · Internship Program</div>
+    <div class="sp-title">온라인<br>과제<span>평가</span></div>
+    <div class="sp-sub">Online Assignment Evaluation System</div>
+    <button class="sp-btn" onclick="go('login')">평가 시작 · Start Evaluation →</button>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="login" class="screen">
+  <div class="login-wrap">
+    <button class="login-back" onclick="go('splash')">← 뒤로 · Back</button>
+    <div class="login-card">
+      <div class="login-logo">ONLINE EVAL</div>
+      <div class="login-h">로그인 · Login</div>
+      <div class="login-sub">사번과 비밀번호를 입력하세요<br>Enter your employee ID and password</div>
+      <div class="tab-row">
+        <button class="tab-btn active" onclick="switchTab('rv')">평가위원 · Reviewer</button>
+        <button class="tab-btn" onclick="switchTab('ad')">관리자 · Admin</button>
+      </div>
+      <div id="pane-rv">
+        <div class="form-group"><label class="form-label">사번 · Employee ID</label><input class="form-input" id="rv-id" placeholder="사번 입력 · Enter ID" type="text"></div>
+        <div class="form-group"><label class="form-label">비밀번호 · Password</label><input class="form-input" id="rv-pw" placeholder="비밀번호 입력" type="password" onkeydown="if(event.key==='Enter')loginReviewer()"></div>
+        <button class="login-btn" onclick="loginReviewer()">평가 시스템 입장 · Enter System</button>
+      </div>
+      <div id="pane-ad" class="d-none">
+        <div class="form-group"><label class="form-label">관리자 ID · Admin ID</label><input class="form-input" id="ad-id" placeholder="ID 입력 · Enter ID" type="text"></div>
+        <div class="form-group"><label class="form-label">비밀번호 · Password</label><input class="form-input" id="ad-pw" placeholder="비밀번호 입력" type="password" onkeydown="if(event.key==='Enter')loginAdmin()"></div>
+        <button class="login-btn" onclick="loginAdmin()">관리자 페이지 입장 · Enter Admin</button>
+      </div>
+      <div class="login-err" id="login-err">⚠ 사번 또는 비밀번호가 올바르지 않습니다 · Invalid ID or password</div>
+
+    </div>
+  </div>
+</div>
+
+<!-- REVIEWER -->
+<div id="reviewer" class="screen">
+  <div class="app-layout">
+    <div class="sidebar">
+      <div class="sb-top"><div class="sb-logo">ONLINE EVAL</div><div class="sb-prog" id="rv-prog">0 / 0 완료</div></div>
+      <div class="sb-user"><div class="sb-av" id="rv-av">?</div><div><div class="sb-name" id="rv-name">-</div><div class="sb-dept" id="rv-dept">-</div></div></div>
+      <div class="sb-tabs">
+        <button class="sb-tab on" onclick="rvTab('eval')">📋 평가</button>
+        <button class="sb-tab" onclick="rvTab('dash')">📊 현황</button>
+      </div>
+      <div class="sb-search-wrap" id="rv-sw"><input class="sb-search" placeholder="🔍 이름 검색 · Search" oninput="filterCands(this.value)"></div>
+      <div class="sb-list" id="cand-list"></div>
+      <div class="sb-foot"><button class="sb-foot-btn red" onclick="logout()">로그아웃 · Logout</button></div>
+    </div>
+    <div class="main-area">
+      <div class="main-hdr">
+        <div><div class="main-title" id="rv-hdr-title">평가 대상자를 선택하세요</div><div class="main-sub" id="rv-hdr-sub">좌측 목록에서 평가할 인원을 선택해 주세요</div></div>
+        <div class="autosave-ind" id="as-ind" style="display:none"><div class="as-dot" id="as-dot"></div><span id="as-txt">자동저장 대기</span></div>
+      </div>
+      <div class="main-body" id="rv-body">
+        <div class="empty-state"><div class="empty-icon">📋</div><div class="empty-txt">좌측에서 평가할 인원을 선택해 주세요 · Select a candidate from the left</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="adminScreen" class="screen">
+  <div class="main-hdr" style="border-bottom:1px solid var(--border);background:var(--surface);padding:18px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+    <div><div class="main-title">관리자 대시보드 · Admin Dashboard</div><div class="main-sub">온라인 과제평가 시스템 · Online Assignment Evaluation</div></div>
+    <button class="sb-foot-btn red" style="width:auto;padding:8px 16px;background:rgba(184,50,50,.1);color:var(--red);border:1px solid rgba(184,50,50,.2);" onclick="logout()">로그아웃</button>
+  </div>
+  <div class="admin-nav">
+    <button class="anav-btn on" onclick="adminGo('dashboard')">📊 대시보드</button>
+    <button class="anav-btn" onclick="adminGo('list')">📋 인원 목록</button>
+    <button class="anav-btn" onclick="adminGo('sheets')">🔗 Google Sheets</button>
+  </div>
+  <div class="main-body" id="admin-body"></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-ov" id="modal">
+  <div class="modal"><button class="modal-close" onclick="closeModal()">✕</button><div id="modal-content"></div></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><span id="toast-msg"></span></div>
+
+<script>
+/* ─────────────────────────────────────────────
+   SCORING GUIDE DATA
+───────────────────────────────────────────── */
+const SCORE_LABELS = [
+  {score:5, level:'매우우수 Outstanding'},
+  {score:4, level:'우수 Good'},
+  {score:3, level:'보통 Average'},
+  {score:2, level:'미흡 Poor'},
+  {score:1, level:'매우미흡 Very Poor'},
+];
+
+const GUIDES = {
+  c1: [
+    {s:5, ko:'과제의 의도와 배경을 명확히 파악하여 기대치를 상회하는 방향성을 제시함', en:'Clearly identified the hidden intent and background of the assignment, presenting a direction that exceeded expectations.'},
+    {s:4, ko:'요구사항을 명확히 이해하고 있으며, 도출된 결과물이 기획 목적에서 벗어남이 없음', en:'Clearly understands the requirements, and the results do not deviate from the project\'s purpose.'},
+    {s:3, ko:'기본적인 목적은 이해했으나, 결과물의 일부분이 과제 취지와 다소 동떨어져 있거나 평이함', en:'Understood the basic purpose, but some parts of the results are somewhat disconnected from the intent or are mediocre.'},
+    {s:2, ko:'과제의 의도를 단편적으로만 파악하여 방향성이 모호하거나 보완이 많이 필요함', en:'Only understood the intent superficially, resulting in an ambiguous direction or a need for significant improvement.'},
+    {s:1, ko:'과제의 핵심 목적을 잘못 이해하여 전혀 다른 방향의 결과물을 제출함', en:'Misunderstood the core purpose of the assignment and submitted results in a completely different direction.'},
+  ],
+  c2: [
+    {s:5, ko:'공신력 있는 기관의 통계, 최신 논문, 실제 사례 등 다각도의 전문 데이터를 근거로 활용하여 논리적 완결성이 매우 높음', en:'Demonstrated high logical integrity by using diverse professional data such as official statistics, latest papers, and real-world cases as evidence.'},
+    {s:4, ko:'주장에 대한 객관적 수치나 근거 자료가 명확히 제시되어 있으며 데이터의 신뢰도가 높음', en:'Provided clear objective figures or supporting data for the claims, ensuring high reliability of the data.'},
+    {s:3, ko:'근거 자료를 제시했으나 포털 사이트 검색 등 일반적인 정보 수준이며, 데이터의 깊이가 다소 부족함', en:'Provided supporting data, but it remains at a general level (e.g., simple web searches), and the depth of the data is somewhat lacking.'},
+    {s:2, ko:'주관적인 의견에 비해 뒷받침하는 데이터가 빈약하여 논리적 설득력이 떨어짐', en:'Supporting data is insufficient compared to personal opinions, leading to weak logical persuasion.'},
+    {s:1, ko:'근거 자료 없이 단순 사실을 나열하거나, 출처가 불분명한 정보를 근거로 사용함', en:'Listed simple facts without supporting evidence or used information from unclear sources as a basis.'},
+  ],
+  l1: [
+    {s:5, ko:'안내되지 않은 전문 영역까지 스스로 깊이 있게 학습하여, 전문가 수준의 용어와 지식을 활용해 과제를 수행함', en:'Conducted in-depth self-study even in unguided professional areas and performed the assignment using expert-level terminology and knowledge.'},
+    {s:4, ko:'필요한 정보를 능동적으로 찾아 학습한 흔적이 뚜렷하며, 습득한 지식을 과제에 적절히 녹여냄', en:'Showed clear evidence of proactively seeking and learning necessary information, effectively integrating the acquired knowledge into the assignment.'},
+    {s:3, ko:'주어진 가이드 내에서 학습을 수행했으나, 지식의 깊이가 얕고 본인의 언어로 소화하는 능력이 다소 부족함', en:'Conducted learning within the provided guidelines, but the depth of knowledge was shallow and the ability to internalize it in their own words was somewhat lacking.'},
+    {s:2, ko:'기본적인 정보 검색 수준에 머물러 있으며, 학습된 지식이 과제 내용과 겉도는 느낌을 줌', en:'Remained at a basic information-gathering level, and the learned knowledge felt disconnected from the content of the assignment.'},
+    {s:1, ko:'학습하려는 노력이 거의 보이지 않으며, 기초적인 업무 지식조차 숙지하지 못함', en:'Showed little to no effort to learn and failed to master even basic job-related knowledge.'},
+  ],
+  l2: [
+    {s:5, ko:'기한을 엄수함은 물론, 결과물의 완성도가 매우 높아 현업 실무에 바로 참고하거나 적용할 수 있는 수준임', en:'Not only met the deadline but also delivered high-quality results that can be immediately applied or referenced in actual business operations.'},
+    {s:4, ko:'기한 내에 성실히 완수했으며, 전반적인 퀄리티가 안정적이고 실무 활용 가치가 충분함', en:'Faithfully completed the work within the deadline; the overall quality is stable and holds sufficient practical value.'},
+    {s:3, ko:'기한은 지켰으나 결과물의 마무리가 다소 거칠고, 실무에 적용하기에는 추가적인 보완 작업이 필요함', en:'Met the deadline, but the final output is somewhat unrefined, requiring additional revisions for practical application.'},
+    {s:2, ko:'결과물이 미진하거나 기한을 간신히 맞춤. 현업에서 참고하기에는 퀄리티가 다소 낮음', en:'Results are insufficient or barely met the deadline; the quality is too low for professional reference.'},
+    {s:1, ko:'기한을 엄수하지 못했거나, 결과물이 미완성 상태로 제출되어 활용이 불가능함', en:'Failed to meet the deadline or submitted an incomplete assignment, making it unusable.'},
+  ],
+  l3: [
+    {s:5, ko:'전사/본부 우수사례가 될만한 창의적인 접근을 시도했으며, 본인만의 독창적인 인사이트가 결과물 전체를 관통함', en:'Attempted a creative approach worthy of being a company-wide/division-level best practice; unique personal insights consistently drive the entire result.'},
+    {s:4, ko:'기존 사례를 참고하되 본인만의 해석을 덧붙여 차별화된 대안이나 개선 방안을 제시함', en:'Referenced existing cases but added personal interpretations to present differentiated alternatives or improvement plans.'},
+    {s:3, ko:'보편적인 방식을 충실히 따르고 있으나, 본인만의 고유한 생각이나 새로운 시도는 부족함', en:'Faithfully followed conventional methods but lacked original thought or new attempts of their own.'},
+    {s:2, ko:'타인의 결과물이나 기존 자료를 거의 그대로 답습하여 본인만의 주관을 찾기 어려움', en:'Mostly followed previous results or existing data, making it difficult to find any personal perspective.'},
+    {s:1, ko:'독창성이 전혀 없으며, 기존 자료를 무분별하게 복사하거나 편집한 수준임', en:'Lacks originality entirely; the work is a mere copy-paste or mindless edit of existing materials.'},
+  ],
+  f1: [
+    {s:5, ko:'피드백의 핵심 의도를 꿰뚫어 결과물을 획기적으로 개선했으며, 피드백 이상의 발전된 대안을 제시함', en:'Pierced through the core intent of the feedback to drastically improve the results and suggested even more advanced alternatives.'},
+    {s:4, ko:'피드백 내용을 성실히 이해하고 누락 없이 결과물에 반영하여 완성도를 높임', en:'Sincerely understood the feedback and reflected it in the results without any omissions, enhancing the overall quality.'},
+    {s:3, ko:'피드백을 반영은 했으나 부분적으로 누락되거나, 반영 수준이 표면적인 수정에 그침', en:'Reflected the feedback, but some parts were omitted or the corrections remained at a superficial level.'},
+    {s:2, ko:'피드백에 대한 이해도가 낮아 반영 결과가 미흡하며, 수정 지시를 반복하게 만듦', en:'Low understanding of the feedback, resulting in poor revisions and requiring repeated instructions.'},
+    {s:1, ko:'피드백을 반영하지 않은 채 이전 결과물을 고수하거나, 명확히 이해하지 못해 방향성이 달라짐', en:'Stuck to previous results without reflecting feedback, or deviated from the direction due to a lack of understanding.'},
+  ],
+  f2: [
+    {s:5, ko:'본인의 취약점을 명확히 파악하고 있으며, 해결을 위해 평가자에게 먼저 구체적이고 수준 높은 질문을 던지며 능동적으로 소통함', en:'Clearly aware of personal weaknesses and proactively initiated high-level, specific communication with evaluators to resolve them.'},
+    {s:4, ko:'의문 사항이 생길 때마다 지체 없이 질문하여 과제 효율을 높이고, 소통 과정에서 매우 긍정적인 태도를 보임', en:'Asked questions without delay whenever doubts arose to increase efficiency and showed a very positive attitude during communication.'},
+    {s:3, ko:'질문을 하면 답변은 잘하지만, 본인이 먼저 고민·생각을 공유하거나 소통을 시도하는 능동성은 부족함', en:'Responded well when asked, but lacked the initiative to share concerns, thoughts, or start communication first.'},
+    {s:2, ko:'소통에 소극적이며 본인의 부족한 점을 감추려 하거나, 필요한 질문을 하지 않음', en:'Passive in communication or tried to hide weaknesses; failed to ask necessary questions.'},
+    {s:1, ko:'소통 자체를 어려워하거나 회피하는 태도를 보임', en:'Found communication difficult or showed a dismissive/avoidant attitude toward interaction.'},
+  ],
+  d1: [
+    {s:5, ko:'발표 구조가 완벽하여 설득력이 높고 시각 자료가 탁월함. 어려운 질문에도 핵심을 정확히 짚어 명쾌하게 답변함', en:'The presentation structure is flawless and highly persuasive, with exceptional visual aids. Provided clear and concise answers by accurately pinpointing the core of difficult questions.'},
+    {s:4, ko:'핵심 메시지가 논리적으로 잘 전달됨. 질문의 요지를 정확히 파악하여 적절한 근거와 함께 답변함', en:'Core messages were delivered logically. Accurately identified the point of questions and answered with appropriate supporting evidence.'},
+    {s:3, ko:'준비한 내용은 잘 전달했으나 설명이 다소 장황함. 질의응답 시 요지에서 약간 벗어난 답변을 하기도 함', en:'Delivered the prepared content well, but the explanations were somewhat lengthy. Occasionally gave answers that slightly deviated from the main point during Q&A.'},
+    {s:2, ko:'발표의 논리가 부족하여 이해하기 어렵고 자료가 조잡함. 질문의 의도를 파악하지 못해 엉뚱한 답변을 함', en:'Lacked logic, making it difficult to understand, and visual materials were unrefined. Gave irrelevant answers due to a failure to grasp the intent of the questions.'},
+    {s:1, ko:'발표 내용을 본인도 제대로 이해하지 못해 읽는 수준이며, 질의응답이 원활히 이뤄지지 않음', en:'Merely read the slides without fully understanding the content; normal communication through Q&A was not feasible.'},
+  ],
+  p1: [
+    {s:5, ko:'모든 세션에 미리 입장하여 대기함. 비대면 환경에서도 흐트러짐 없는 최상의 참여 태도를 유지함', en:'Entered and waited before the start of every session. Maintained an impeccable and top-tier attitude toward participation even in a remote environment.'},
+    {s:4, ko:'지각이나 무단이탈 없이 모든 일정에 성실히 참여함', en:'Sincerely participated in all scheduled sessions without any tardiness or unauthorized absence.'},
+    {s:3, ko:'전반적으로 참여하나, 네트워크 환경 관리 미흡 등으로 간혹 접속 지연이 발생함', en:'Participated overall, but occasional connection delays occurred due to insufficient management of the network environment.'},
+    {s:2, ko:'1~2회 무단지각이나 조기 이탈이 발생하여 운영에 차질을 줌', en:'Caused disruptions to operations due to one or two instances of unauthorized tardiness or early departure.'},
+    {s:1, ko:'무단 불참이 반복됨(3회 이상 시 즉시 계약 종료 대상). 기본적인 참여 규칙을 준수하지 않음. (즉시 탈락)', en:'Repeated unauthorized absences (Subject to immediate contract termination if 3 or more times). Failed to comply with basic participation rules. (Immediate Disqualification)'},
+  ],
+};
+
+/* ─────────────────────────────────────────────
+   CRITERIA
+───────────────────────────────────────────── */
+const CRITERIA = [
+  {key:'c1',cat:'common',weight:10,max:5,ko:'공통1 · 과제의 핵심 목적과 취지를 명확히 이해하고, 요구사항에 맞는 방향으로 결과물을 도출했는가?',en:'Did the candidate clearly understand the core purpose and intent of the assignment and produce results aligned with the requirements?'},
+  {key:'c2',cat:'common',weight:10,max:5,ko:'공통2 · 신뢰할 수 있는 데이터와 명확한 근거 자료를 제시하였는가?',en:'Did the candidate provide reliable data and clear supporting evidence rather than simply listing information?'},
+  {key:'l1',cat:'learn', weight:25/3,max:5,ko:'학습/실행1 · 필요한 지식과 정보를 스스로 탐색하고 학습하여 본인의 것으로 소화했는가?',en:'Did the candidate proactively explore and learn the required knowledge and effectively internalize it?'},
+  {key:'l2',cat:'learn', weight:25/3,max:5,ko:'학습/실행2 · 정해진 기한 내에 결과물을 완수했으며, 퀄리티가 현업에서 활용 가능한 수준인가?',en:'Did the candidate complete results within the deadline at a quality level applicable to actual business operations?'},
+  {key:'l3',cat:'learn', weight:25/3,max:5,ko:'학습/실행3 · 기존 방식을 넘어 본인의 생각과 해석이 담긴 새로운 관점이나 해결 방안을 제시했는가?',en:'Did the candidate go beyond conventional methods to present new perspectives or solutions based on their own thoughts?'},
+  {key:'f1',cat:'fb',    weight:12.5,max:5,ko:'피드백수용/개선1 · 팀장/멘토로부터 받은 피드백을 결과물에 즉각적이고 적극적으로 반영했는가?',en:'Did the candidate immediately and actively reflect feedback from team leaders/mentors in the final results?'},
+  {key:'f2',cat:'fb',    weight:12.5,max:5,ko:'피드백수용/개선2 · 본인의 부족한 점을 인지하고 적극적인 태도로 질의응답 및 소통에 참여했는가?',en:'Did the candidate recognize their weaknesses and participate in Q&A and communication with a proactive attitude?'},
+  {key:'d1',cat:'comm',  weight:20,max:5,ko:'전달력 Communication & Delivery · 발표 내용이 논리적이고 간결하였으며, 질의응답 시 명확히 답변했는가?',en:'Was the presentation logical and concise, and did the candidate provide clear answers during Q&A?'},
+  {key:'p1',cat:'part',  weight:10,max:5,ko:'참여도 Participation · 정해진 온라인 회의, 교육, 중간 점검 일정에 성실하게 참여했는가?',en:'Did the candidate participate sincerely in all scheduled online meetings, training, and mid-term check-ins?'},
+];
+
+const CAT_LABELS = {common:'공통 · Common',learn:'학습/실행 · Learn & Execute',fb:'피드백수용/개선 · Feedback & Improvement',comm:'전달력 · Communication',part:'참여도 · Participation'};
+const CAT_PCT   = {common:'20%',learn:'25%',fb:'25%',comm:'20%',part:'10%'};
+
+/* ─────────────────────────────────────────────
+   DATA
+───────────────────────────────────────────── */
+let REVIEWERS = {'2220343':{pw:'1234',name:'김민수',dept:'인사팀',group:''}};
+let CANDIDATES = [
+  {id:'I2025001',name:'강다은', ojt1:'마케팅팀',ojt2:'전략기획팀',project:'SNS 광고 최적화 전략',group:'A그룹',active:true},
+  {id:'I2025002',name:'오준혁', ojt1:'개발팀',  ojt2:'QA팀',      project:'사내 업무 자동화 툴',  group:'A그룹',active:true},
+  {id:'I2025003',name:'한소희', ojt1:'기획팀',  ojt2:'마케팅팀',  project:'신규 서비스 기획안',   group:'B그룹',active:true},
+  {id:'I2025004',name:'윤재원', ojt1:'데이터팀',ojt2:'개발팀',    project:'고객 이탈 예측 모델링',group:'B그룹',active:true},
+];
+let SHEETS_CFG = {
+  scriptUrl: 'https://script.google.com/macros/s/AKfycbxyXcc6vwk8KWfEH8zpUJU3d4VtyPvbr9MDTBGU7T-o1oX0ReqOr0LQQrvZP8I-7fCfiw/exec',
+  sheetUrl:  'https://docs.google.com/spreadsheets/d/1Z2vlrvkT3d8oq7JEQDPHLbJ7TQHgPfErpS893KbsiqM/edit?usp=sharing',
+  connected: true
+};
+let evalData = {};
+
+/* ─────────────────────────────────────────────
+   LOCALSTORAGE
+───────────────────────────────────────────── */
+const LS = {eval:'oe_eval_v2',sheets:'oe_sheets_v2',reviewers:'oe_rv_v2',candidates:'oe_cand_v2'};
+function saveLS() {
+  try {
+    localStorage.setItem(LS.eval,      JSON.stringify(evalData));
+    localStorage.setItem(LS.sheets,    JSON.stringify(SHEETS_CFG));
+    localStorage.setItem(LS.reviewers, JSON.stringify(REVIEWERS));
+    localStorage.setItem(LS.candidates,JSON.stringify(CANDIDATES));
+  } catch(e){}
+}
+function loadLS() {
+  try {
+    const e=localStorage.getItem(LS.eval);      if(e) evalData   =JSON.parse(e);
+    const s=localStorage.getItem(LS.sheets);    if(s) SHEETS_CFG =JSON.parse(s);
+    const r=localStorage.getItem(LS.reviewers); if(r) REVIEWERS  =JSON.parse(r);
+    const c=localStorage.getItem(LS.candidates);if(c) CANDIDATES =JSON.parse(c);
+  } catch(e){}
+}
+loadLS();
+
+/* ─────────────────────────────────────────────
+   GOOGLE SHEETS SYNC
+   그룹 매핑: 인원목록 F열(그룹) = 평가자목록 E열(그룹)
+───────────────────────────────────────────── */
+async function fetchSheet(name) {
+  if (!SHEETS_CFG.scriptUrl) return [];
+  try {
+    const res = await fetch(SHEETS_CFG.scriptUrl+'?sheet='+encodeURIComponent(name));
+    const json = await res.json();
+    return Array.isArray(json)&&json.length>1 ? json.slice(1).filter(r=>r.some(c=>String(c).trim())) : [];
+  } catch(e){ return []; }
+}
+
+async function syncAll(silent) {
+  if (!SHEETS_CFG.scriptUrl) return false;
+  try {
+    const [candRows, rvRows] = await Promise.all([fetchSheet('인원목록'), fetchSheet('평가자목록')]);
+
+    // 인원목록: A사번 B이름 C1차OJT D2차OJT E과제명 F그룹 G활성화(Y/N)
+    if (candRows.length) {
+      CANDIDATES = candRows.map(row => ({
+        id:      String(row[0]||'').trim(),
+        name:    String(row[1]||'').trim(),
+        ojt1:    String(row[2]||'').trim(),
+        ojt2:    String(row[3]||'').trim(),
+        project: String(row[4]||'').trim(),
+        group:   String(row[5]||'').trim(),
+        active:  String(row[6]||'Y').trim().toUpperCase() !== 'N',
+      })).filter(c=>c.id&&c.name);
+    }
+
+    // 평가자목록: A사번 B이름 C부서 D비밀번호 E그룹 F활성화(Y/N)
+    if (rvRows.length) {
+      REVIEWERS = {};
+      rvRows.forEach(row => {
+        const id = String(row[0]||'').trim(); if(!id) return;
+        const activeFlag = String(row[5]||'Y').trim().toUpperCase();
+        if (activeFlag === 'N') return; // 비활성 평가자는 로그인 불가
+        REVIEWERS[id] = {
+          name:   String(row[1]||'').trim(),
+          dept:   String(row[2]||'').trim(),
+          pw:     String(row[3]||'').trim()||id,
+          group:  String(row[4]||'').trim(),  // E열 그룹
+          active: true,
+        };
+      });
+    }
+
+    saveLS();
+    if (!silent) showToast('✅ 데이터 동기화 완료 · Sync complete');
+    return true;
+  } catch(e) {
+    if (!silent) showToast('⚠ 동기화 실패 · Sync failed');
+    return false;
+  }
+}
+
+// 다른 기기에서 로그인 시: 평가결과 시트에서 본인 평가 데이터 복원
+async function loadMyEvalFromSheet(rvId) {
+  if (!SHEETS_CFG.scriptUrl) return;
+  try {
+    const rows = await fetchSheet('평가결과');
+    if (!rows.length) return;
+    // 헤더행: A평가자사번(0) D대상자사번(3) I~Q점수(8~16) R총점(17) S등급(18) T잘한점(19) U개선점(20) V참석여부(21) W제출시각(22) X저장상태(23)
+    const SCORE_KEYS = ['c1','c2','l1','l2','l3','f1','f2','d1','p1'];
+    rows.forEach(row => {
+      if (String(row[0]||'').trim() !== String(rvId).trim()) return;
+      const candId = String(row[3]||'').trim();
+      if (!candId) return;
+      const k = getKey(rvId, candId);
+      const isFinal = String(row[23]||'').trim() === '최종제출';
+      // 로컬에 이미 최종제출 데이터가 있으면 시트 데이터로 덮어쓰지 않음
+      if (evalData[k]?.submitted && !isFinal) return;
+      const scores = {};
+      SCORE_KEYS.forEach((key, i) => { scores[key] = Number(row[8 + i]||0); });
+      evalData[k] = {
+        scores,
+        good:        String(row[19]||''),
+        improve:     String(row[20]||''),
+        attendance:  String(row[21]||''),
+        submittedAt: String(row[22]||''),
+        submitted:   isFinal,
+      };
+    });
+    saveLS();
+  } catch(e) {
+    console.warn('평가 데이터 복원 실패:', e);
+  }
+}
+
+// 앱 시작 시 자동 동기화
+window.addEventListener('load', async function() {
+  if (!SHEETS_CFG.scriptUrl) return;
+  showBanner('⏳ 구글 시트에서 데이터를 불러오는 중... · Loading from Google Sheets...', '#E87722');
+  const ok = await syncAll(true);
+  showBanner(ok ? '✅ 데이터 동기화 완료 · Sync Complete' : '⚠ 동기화 실패 · Sync Failed', ok ? '#2A7D4F' : '#C8410A', 2500);
+  // 30초마다 백그라운드 자동 갱신 (여러 명 동시 사용 대응)
+  setInterval(async () => {
+    if (!SHEETS_CFG.scriptUrl) return;
+    await syncAll(true);
+    // 로그인 상태면 목록 갱신
+    if (currentUser && currentRole === 'reviewer') {
+      myCandidates();
+    }
+  }, 30000);
+});
+
+function showBanner(msg, bg, dur) {
+  const b=document.getElementById('sync-banner');
+  b.textContent=msg; b.style.background=bg||'var(--accent)'; b.style.display='block';
+  if(dur) setTimeout(()=>{b.style.display='none';},dur);
+}
+function var_(v){ return getComputedStyle(document.documentElement).getPropertyValue(v); }
+
+// 현재 평가자의 그룹에 속한 활성 인원만 반환
+// - 인원목록 G열 Y = 활성
+// - 평가자목록 F열 Y = 활성 (비활성이면 이미 REVIEWERS에서 제외됨)
+// - 인원목록 F열(그룹) = 평가자목록 E열(그룹) 일치 시 매핑
+function getMyCandidates() {
+  if (!currentUser) return [];
+  const myGroup = (REVIEWERS[currentUser.id]||{}).group||'';
+  // 활성 인원만 필터
+  let cands = CANDIDATES.filter(c => c.active === true);
+  // 그룹 매핑: 평가자 그룹명과 인원 그룹명이 일치하는 인원만
+  if (myGroup) {
+    cands = cands.filter(c => c.group.trim() === myGroup.trim());
+  }
+  return cands;
+}
+
+/* ─────────────────────────────────────────────
+   STATE
+───────────────────────────────────────────── */
+let currentUser=null, currentRole=null, selectedCandId=null;
+let filteredCands=[], adminView='dashboard', rvView='eval';
+let autosaveTimer=null;
+
+/* ─────────────────────────────────────────────
+   HELPERS
+───────────────────────────────────────────── */
+function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function getKey(rv,cand){return rv+':'+cand;}
+function getEval(rvId,candId){
+  const k=getKey(rvId,candId);
+  if(!evalData[k]){evalData[k]={scores:{},attendance:'',good:'',improve:'',submitted:false,submittedAt:''};CRITERIA.forEach(c=>{evalData[k].scores[c.key]=0;});}
+  return evalData[k];
+}
+function calcTotal(ev){return Math.round(CRITERIA.reduce((s,c)=>s+(ev.scores[c.key]||0)*(c.weight/c.max),0)*10)/10;}
+function getGrade(t){if(t>=95)return'S';if(t>=90)return'A';if(t>=85)return'B+';if(t>=80)return'B';return'C';}
+function gradeClass(g){return{S:'g-S',A:'g-A','B+':'g-Bp',B:'g-B',C:'g-C'}[g]||'g-none';}
+function gradeColor(g){return{S:'var(--s-color)',A:'var(--a-color)','B+':'var(--bp-color)',B:'var(--b-color)',C:'var(--c-color)'}[g]||'var(--text4)';}
+function showToast(msg,dur){const t=document.getElementById('toast');document.getElementById('toast-msg').textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),dur||2800);}
+
+/* ─────────────────────────────────────────────
+   LOGIN
+───────────────────────────────────────────── */
+function switchTab(t){
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',(i===0&&t==='rv')||(i===1&&t==='ad')));
+  document.getElementById('pane-rv').classList.toggle('d-none',t!=='rv');
+  document.getElementById('pane-ad').classList.toggle('d-none',t!=='ad');
+  document.getElementById('login-err').style.display='none';
+}
+function loginReviewer(){
+  const id=document.getElementById('rv-id').value.trim();
+  const pw=document.getElementById('rv-pw').value;
+
+  async function doLogin() {
+    // 시트 연동이 설정되어 있으면 로그인 전 최신 데이터 먼저 동기화
+    if (SHEETS_CFG.scriptUrl) {
+      showBanner('⏳ 최신 데이터 확인 중... · Syncing...', '#E87722');
+      await syncAll(true);
+      showBanner('', '', 1);
+    }
+    if(REVIEWERS[id]&&REVIEWERS[id].pw===pw){
+      currentUser={...REVIEWERS[id],id};currentRole='reviewer';
+      document.getElementById('rv-av').textContent=currentUser.name[0];
+      document.getElementById('rv-name').textContent=currentUser.name;
+      document.getElementById('rv-dept').textContent=currentUser.dept||id;
+      // 다른 기기 접속 시 시트에서 본인 평가 데이터 복원
+      if (SHEETS_CFG.scriptUrl) {
+        showBanner('⏳ 이전 평가 데이터 불러오는 중...', '#E87722');
+        await loadMyEvalFromSheet(id);
+        showBanner('✅ 데이터 복원 완료', '#2A7D4F', 2000);
+      }
+      myCandidates(); rvTab('eval'); go('reviewer');
+    } else {
+      document.getElementById('login-err').style.display='block';
+    }
+  }
+  doLogin();
+}
+function loginAdmin(){
+  const id=document.getElementById('ad-id').value.trim();
+  const pw=document.getElementById('ad-pw').value;
+  if(id==='intern321'&&pw==='intern321'){currentRole='admin';adminGo('dashboard');go('adminScreen');}
+  else{document.getElementById('login-err').style.display='block';}
+}
+function logout(){currentUser=null;currentRole=null;selectedCandId=null;go('login');}
+
+/* ─────────────────────────────────────────────
+   REVIEWER — CANDIDATE LIST
+───────────────────────────────────────────── */
+function myCandidates(){filteredCands=getMyCandidates();renderCandList();updateRvProg();}
+function filterCands(q){filteredCands=getMyCandidates().filter(c=>c.name.includes(q)||(c.ojt1||'').includes(q)||(c.group||'').includes(q));renderCandList();}
+function renderCandList(){
+  const el=document.getElementById('cand-list');
+  if(!filteredCands.length){el.innerHTML='<div class="empty-state" style="padding:28px 12px"><div class="empty-txt">배정된 활성 인원 없음</div></div>';return;}
+  el.innerHTML=filteredCands.map(c=>{
+    const ev=getEval(currentUser.id,c.id);
+    const total=calcTotal(ev);const grade=ev.submitted?getGrade(total):null;const on=selectedCandId===c.id;
+    return`<div class="sb-item${on?' on':''}" onclick="selectCand('${c.id}')">
+      <div class="sb-item-name">${c.name}</div>
+      <div class="sb-item-sub">${c.ojt1||''} → ${c.ojt2||''}</div>
+      <div class="sb-item-badges">
+        <span class="bd ${ev.submitted?'bd-done':'bd-todo'}">${ev.submitted?'✓ 완료':'미완료'}</span>
+        ${ev.submitted?`<span class="bd bd-grade">${grade}</span><span class="bd-score">${total}점</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+function updateRvProg(){
+  if(!currentUser)return;
+  const done=filteredCands.filter(c=>evalData[getKey(currentUser.id,c.id)]?.submitted).length;
+  document.getElementById('rv-prog').textContent=done+' / '+filteredCands.length+' 완료 · Done';
+}
+
+/* ─────────────────────────────────────────────
+   REVIEWER — TABS
+───────────────────────────────────────────── */
+function rvTab(tab){
+  rvView=tab;
+  document.querySelectorAll('.sb-tab').forEach((b,i)=>b.classList.toggle('on',(i===0&&tab==='eval')||(i===1&&tab==='dash')));
+  const sw=document.getElementById('rv-sw');
+  if(tab==='dash'){sw.style.display='none';renderRvDashboard();}
+  else{sw.style.display='';if(selectedCandId)renderEvalForm();else resetMain();}
+}
+function resetMain(){
+  document.getElementById('rv-hdr-title').textContent='평가 대상자를 선택하세요 · Select a candidate';
+  document.getElementById('rv-hdr-sub').textContent='좌측 목록에서 평가할 인원을 선택해 주세요';
+  document.getElementById('as-ind').style.display='none';
+  document.getElementById('rv-body').innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-txt">좌측에서 평가할 인원을 선택해 주세요</div></div>';
+}
+
+/* ─────────────────────────────────────────────
+   REVIEWER — DASHBOARD
+───────────────────────────────────────────── */
+function renderRvDashboard(){
+  document.getElementById('rv-hdr-title').textContent='내 평가 현황 · My Status';
+  document.getElementById('rv-hdr-sub').textContent=currentUser.name+' 님의 평가 요약';
+  document.getElementById('as-ind').style.display='none';
+  const myIds=filteredCands.map(c=>c.id);
+  const submitted=myIds.filter(id=>evalData[getKey(currentUser.id,id)]?.submitted);
+  const grades={S:0,A:0,'B+':0,B:0,C:0};const allS=[];
+  submitted.forEach(id=>{const ev=evalData[getKey(currentUser.id,id)];const t=calcTotal(ev);allS.push(t);grades[getGrade(t)]++;});
+  const avg=allS.length?Math.round(allS.reduce((a,b)=>a+b,0)/allS.length*10)/10:'-';
+  const grRows=['S','A','B+','B','C'].map(g=>{const cnt=grades[g];const pct=submitted.length?Math.round(cnt/submitted.length*100):0;return`<div class="grade-row"><div class="gr-lbl" style="color:${gradeColor(g)}">${g}</div><div class="gr-desc">${{S:'95+',A:'90+','B+':'85+',B:'80+',C:'~79'}[g]}</div><div class="gr-bar"><div class="gr-fill" style="width:${pct}%;background:${gradeColor(g)}"></div></div><div class="gr-cnt">${cnt}명</div></div>`;}).join('');
+  document.getElementById('rv-body').innerHTML=`
+    <div class="rv-dash-grid">
+      <div class="rv-stat"><div class="rv-stat-lbl">전체 대상 · Total</div><div class="rv-stat-val">${myIds.length}</div></div>
+      <div class="rv-stat"><div class="rv-stat-lbl">평가 완료 · Done</div><div class="rv-stat-val">${submitted.length}</div></div>
+      <div class="rv-stat"><div class="rv-stat-lbl">평균 점수 · Avg</div><div class="rv-stat-val">${avg}</div></div>
+    </div>
+    <div class="grade-breakdown"><div class="gbk-title">등급 현황 · Grade Distribution</div>${grRows}</div>
+    <div class="table-card">
+      <div class="tbl-toolbar"><div class="tbl-title">평가 결과 요약 · Summary</div></div>
+      <table class="tbl"><thead><tr><th>이름</th><th>1차 OJT</th><th>2차 OJT</th><th>총점</th><th>등급</th><th>상태</th></tr></thead>
+      <tbody>${filteredCands.map(c=>{const ev=evalData[getKey(currentUser.id,c.id)];const done=ev?.submitted;const t=done?calcTotal(ev):null;const gr=done?getGrade(t):'-';return`<tr onclick="selectCandAndEval('${c.id}')"><td class="td-name">${c.name}</td><td><span class="dept-tag">${c.ojt1||'-'}</span></td><td><span class="dept-tag">${c.ojt2||'-'}</span></td><td>${done?`<div class="score-cell"><div class="mini-bar"><div class="mini-fill" style="width:${t}%"></div></div><span class="score-txt">${t}</span></div>`:'<span style="color:var(--text4)">-</span>'}</td><td>${done?`<span style="font-family:Bebas Neue;font-size:15px;color:${gradeColor(gr)}">${gr}</span>`:'-'}</td><td><span class="bd ${done?'bd-done':'bd-todo'}">${done?'완료':'미완료'}</span></td></tr>`;}).join('')}</tbody>
+      </table>
+    </div>`;
+}
+function selectCandAndEval(id){selectedCandId=id;rvTab('eval');renderCandList();}
+
+/* ─────────────────────────────────────────────
+   REVIEWER — EVAL FORM
+───────────────────────────────────────────── */
+function selectCand(id){selectedCandId=id;rvView='eval';document.getElementById('rv-sw').style.display='';renderCandList();renderEvalForm();}
+
+function renderGuidePanel(key){
+  const rows=GUIDES[key]||[];
+  return rows.map(r=>`
+    <div class="guide-row">
+      <span class="guide-score">${r.s}점</span>
+      <span class="guide-level">${{5:'매우우수 Outstanding',4:'우수 Good',3:'보통 Average',2:'미흡 Poor',1:'매우미흡 Very Poor'}[r.s]||''}</span>
+      <span class="guide-ko">${r.ko}</span>
+      <span class="guide-en">${r.en}</span>
+    </div>`).join('');
+}
+
+function toggleGuide(key){
+  const p=document.getElementById('guide-'+key);
+  if(!p)return;
+  const open=p.classList.toggle('open');
+  const btn=document.getElementById('guide-btn-'+key);
+  if(btn)btn.textContent=(open?'▲ ':'▶ ')+'평가 가이드 · Scoring Guide';
+}
+
+function renderCI(cr, score){
+  const scoreLabels = {1:'매우미흡', 2:'미흡', 3:'보통', 4:'우수', 5:'매우우수'};
+  const selectedLabel = score > 0 ? `${score}점 · ${scoreLabels[score]}` : '미선택';
+  return`<div class="ci">
+    <div class="ci-cat cat-${cr.cat}">${CAT_LABELS[cr.cat].split('·')[0].trim()} · ${CAT_PCT[cr.cat]} 반영</div>
+    <div class="ci-q"><span class="ci-q-ko">${cr.ko}</span><span class="ci-q-en">${cr.en}</span></div>
+    <button class="guide-toggle" id="guide-btn-${cr.key}" onclick="toggleGuide('${cr.key}')">▶ 평가 가이드 · Scoring Guide</button>
+    <div class="guide-panel" id="guide-${cr.key}">${renderGuidePanel(cr.key)}</div>
+    <div class="score-ctrl">
+      ${[1,2,3,4,5].map(v=>`
+        <button class="sc-btn${score===v?' selected':''}" onclick="setScore('${cr.key}',${v})" title="${v}점 · ${scoreLabels[v]}">${v}</button>
+      `).join('')}
+    </div>
+    <div class="sc-score-label" id="sv-lbl-${cr.key}">${selectedLabel}</div>
+  </div>`;
+}
+
+function renderEvalForm(){
+  const c=CANDIDATES.find(x=>x.id===selectedCandId);if(!c)return;
+  const ev=getEval(currentUser.id,c.id);
+  const total=calcTotal(ev);const grade=getGrade(total);
+  document.getElementById('rv-hdr-title').textContent=c.name+' 님 평가 · Evaluation';
+  document.getElementById('rv-hdr-sub').textContent=c.project||'';
+  document.getElementById('as-ind').style.display='flex';
+  const catOrder=['common','learn','fb','comm','part'];
+  let criteriaHTML='';
+  catOrder.forEach(cat=>{
+    const items=CRITERIA.filter(cr=>cr.cat===cat);
+    criteriaHTML+=`<div class="sec-hdr"><span class="sec-tag">${CAT_LABELS[cat]}</span><span class="sec-pct">${CAT_PCT[cat]}</span><span class="sec-line"></span></div>`;
+    criteriaHTML+=`<div class="criteria-grid" style="${items.length===1?'grid-template-columns:1fr':''}">${items.map(cr=>renderCI(cr,ev.scores[cr.key]||0)).join('')}</div>`;
+  });
+  const att=ev.attendance||'';
+  document.getElementById('rv-body').innerHTML=`
+    <div class="cand-card">
+      <div class="cand-card-name">${c.name}</div>
+      <div class="cand-card-id">사번 ID: ${c.id}${c.group?' · 그룹: '+c.group:''}</div>
+      <div class="cand-card-grid">
+        <div class="ccf"><label>1차 OJT</label><span>${c.ojt1||'-'}</span></div>
+        <div class="ccf"><label>2차 OJT</label><span>${c.ojt2||'-'}</span></div>
+        <div class="ccf"><label>과제명 Project</label><span style="font-size:11px">${c.project||'-'}</span></div>
+      </div>
+    </div>
+
+    <div class="total-bar">
+      <div>
+        <div class="total-lbl">현재 총점 · Current Total</div>
+        <div class="total-nums"><span class="total-big" id="total-disp">${total}</span><span class="total-denom">/ 100점</span></div>
+        <div style="margin-top:5px;display:flex;align-items:center;gap:5px">
+          <div class="as-dot ${ev.submitted?'saved':''}" id="as-dot" style="width:6px;height:6px;border-radius:50%;background:${ev.submitted?'var(--accent3)':'var(--text4)'};flex-shrink:0;transition:background .3s"></div>
+          <span id="as-txt" style="font-size:11px;color:var(--text3)">${ev.submitted?'✅ 최종 제출 완료':'자동저장 대기 중'}</span>
+        </div>
+      </div>
+      <div class="grade-box ${gradeClass(total===0?null:grade)}" id="grade-disp">${total===0?'-':grade}</div>
+    </div>
+
+    <div class="attend-section">
+      <div class="attend-title">참석여부 · Attendance Status</div>
+      <div class="attend-btns">
+        <button class="attend-btn${att==='참석'?' sel-attend':''}" onclick="setAttend('참석')">참석<span class="attend-sub">Attended</span></button>
+        <button class="attend-btn${att==='일부참석'?' sel-partial':''}" onclick="setAttend('일부참석')">일부참석<span class="attend-sub">Partial</span></button>
+        <button class="attend-btn${att==='불참'?' sel-absent':''}" onclick="setAttend('불참')">불참<span class="attend-sub">Absent</span></button>
+      </div>
+    </div>
+
+    ${criteriaHTML}
+    <div class="sec-hdr"><span class="sec-tag">종합 의견 · Overall Comments</span><span class="sec-line"></span></div>
+    <div class="text-grid">
+      <div class="tc"><div class="tc-lbl"><span class="lbl-good">잘한 점 · Strengths</span></div><textarea class="eval-ta" id="ta-good" placeholder="인턴의 강점이나 잘한 점 · Strengths">${ev.good||''}</textarea></div>
+      <div class="tc"><div class="tc-lbl"><span class="lbl-improve">개선 점 · Improvement</span></div><textarea class="eval-ta" id="ta-improve" placeholder="향후 개선이 필요한 부분 · Areas for improvement">${ev.improve||''}</textarea></div>
+    </div>
+
+    <div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--accent);padding:20px 22px;margin-top:4px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div>
+          <div style="font-size:13px;font-weight:800;color:var(--text)">평가 최종 제출 · Final Submit</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px">
+            점수 입력 시 구글 시트에 <b>임시저장</b>됩니다.<br>
+            아래 버튼을 눌러야 <b>최종 제출</b>로 확정됩니다.
+          </div>
+        </div>
+        <div id="as-dot2" style="width:10px;height:10px;border-radius:50%;background:${ev.submitted?'var(--accent3)':'var(--border2)'};flex-shrink:0;transition:background .3s"></div>
+      </div>
+      <button id="submit-btn-bottom" onclick="submitEval()"
+        style="width:100%;padding:16px;border:none;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.5px;transition:all .2s;
+          background:${ev.submitted?'var(--accent3)':'var(--accent)'};color:#fff;">
+        ${ev.submitted ? '✅ 최종 제출 완료 · Submitted' : '✅ 최종 제출하기 · Final Submit'}
+      </button>
+      ${ev.submitted?`<div style="text-align:center;font-size:11px;color:var(--accent3);margin-top:8px;font-weight:700">제출 완료 · ${ev.submittedAt?new Date(ev.submittedAt).toLocaleString('ko'):''}</div>`:''}
+    </div>`;
+  document.getElementById('ta-good').addEventListener('input',triggerAS);
+  document.getElementById('ta-improve').addEventListener('input',triggerAS);
+}
+
+function setAttend(val){
+  if(!selectedCandId||!currentUser)return;
+  const ev=getEval(currentUser.id,selectedCandId);
+  ev.attendance=val; triggerAS();
+  document.querySelectorAll('.attend-btn').forEach(b=>{
+    b.className='attend-btn';
+    if(b.textContent.startsWith('참석')&&val==='참석'&&!b.textContent.startsWith('일부')&&!b.textContent.startsWith('불')) b.className='attend-btn sel-attend';
+    if(b.textContent.startsWith('일부')&&val==='일부참석') b.className='attend-btn sel-partial';
+    if(b.textContent.startsWith('불')&&val==='불참') b.className='attend-btn sel-absent';
+  });
+}
+
+function setScore(key, val){
+  if(!selectedCandId||!currentUser) return;
+  const ev = getEval(currentUser.id, selectedCandId);
+  ev.scores[key] = val;
+
+  // 해당 항목 버튼 UI 업데이트
+  const scoreLabels = {1:'매우미흡', 2:'미흡', 3:'보통', 4:'우수', 5:'매우우수'};
+  const ctrl = document.getElementById('sv-lbl-'+key)?.closest('.ci')?.querySelector('.score-ctrl');
+  if(ctrl) {
+    ctrl.querySelectorAll('.sc-btn').forEach((btn, i) => {
+      btn.classList.toggle('selected', i+1 === val);
+    });
+  }
+  const lbl = document.getElementById('sv-lbl-'+key);
+  if(lbl) lbl.textContent = `${val}점 · ${scoreLabels[val]}`;
+
+  // 총점 / 등급 업데이트
+  const total = calcTotal(ev); const grade = getGrade(total);
+  const td = document.getElementById('total-disp'); if(td) td.textContent = total;
+  const gd = document.getElementById('grade-disp'); if(gd){ gd.textContent = grade; gd.className = 'grade-box '+gradeClass(grade); }
+  triggerAS();
+}
+function triggerAS(){
+  const dot=document.getElementById('as-dot'),txt=document.getElementById('as-txt');
+  if(dot){ dot.classList.remove('saved'); dot.style.background='var(--text4)'; }
+  if(txt) txt.textContent='임시저장 중... · Saving draft...';
+  clearTimeout(autosaveTimer);
+  autosaveTimer=setTimeout(()=>{
+    autoSave();
+    if(dot){ dot.classList.add('saved'); dot.style.background='var(--accent3)'; }
+    if(txt) txt.textContent='임시저장됨 · Draft saved · '+new Date().toLocaleTimeString('ko',{hour:'2-digit',minute:'2-digit'});
+  },800);
+}
+function autoSave(){
+  if(!selectedCandId||!currentUser)return;
+  const ev=getEval(currentUser.id,selectedCandId);
+  const g=document.getElementById('ta-good'),im=document.getElementById('ta-improve');
+  if(g)ev.good=g.value;if(im)ev.improve=im.value;
+  saveLS();
+  // 구글 시트에도 임시저장 (draft) — 브라우저를 꺼도 시트에 남음
+  const c=CANDIDATES.find(x=>x.id===selectedCandId);
+  if(c) pushToSheets(c, ev, false); // false = 임시저장
+}
+function submitEval(){
+  if(!selectedCandId||!currentUser)return;
+  autoSave();
+  const ev=getEval(currentUser.id,selectedCandId);
+  ev.submitted=true; ev.submittedAt=new Date().toISOString();
+  saveLS(); renderCandList(); updateRvProg();
+  const c=CANDIDATES.find(x=>x.id===selectedCandId);
+  const total=calcTotal(ev);
+  showToast('✅ '+c.name+' 님 최종 제출 완료 · '+total+'점 ('+getGrade(total)+')');
+  pushToSheets(c, ev, true);
+  // 버튼 및 상태 표시 업데이트
+  const btn=document.getElementById('submit-btn-bottom');
+  if(btn){ btn.textContent='✅ 최종 제출 완료 · Submitted'; btn.style.background='var(--accent3)'; }
+  const dot=document.getElementById('as-dot');
+  if(dot){ dot.style.background='var(--accent3)'; }
+  const dot2=document.getElementById('as-dot2');
+  if(dot2){ dot2.style.background='var(--accent3)'; }
+  const txt=document.getElementById('as-txt');
+  if(txt){ txt.textContent='✅ 최종 제출 완료'; }
+}
+
+/* ─────────────────────────────────────────────
+   GOOGLE SHEETS PUSH (UPSERT 방식)
+   컬럼 순서 (A~X):
+   A평가자사번 B평가자명 C평가자부서 D대상자사번 E대상자명 F1차OJT G2차OJT H과제명
+   I공통1 J공통2 K학습1 L학습2 M학습3 N피드백1 O피드백2 P전달력 Q참여도
+   R총점 S등급 T잘한점 U개선점 V참석여부 W제출시각 X저장상태(임시저장/최종제출)
+
+   upsert 방식: 같은 평가자사번+대상자사번 행이 있으면 덮어쓰기, 없으면 추가
+   → 자동저장 때마다 호출되어도 행이 중복 생성되지 않음
+───────────────────────────────────────────── */
+async function pushToSheets(cand, ev, isFinal){
+  if(!SHEETS_CFG.scriptUrl) return;
+  const rv=currentUser;
+  const total=calcTotal(ev); const grade=getGrade(total);
+  const status = isFinal ? '최종제출' : '임시저장';
+  const submittedAt = isFinal ? (ev.submittedAt||new Date().toISOString()) : '';
+  const row=[
+    rv.id, rv.name, rv.dept||'',
+    cand.id, cand.name, cand.ojt1||'', cand.ojt2||'', cand.project||'',
+    ev.scores.c1||0, ev.scores.c2||0,
+    ev.scores.l1||0, ev.scores.l2||0, ev.scores.l3||0,
+    ev.scores.f1||0, ev.scores.f2||0,
+    ev.scores.d1||0, ev.scores.p1||0,
+    total, grade,
+    ev.good||'', ev.improve||'',
+    ev.attendance||'',  // V열 참석여부
+    submittedAt,        // W열 제출시각
+    status              // X열 저장상태
+  ];
+  try {
+    await fetch(SHEETS_CFG.scriptUrl, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify({ type:'eval_upsert', rvId:rv.id, candId:cand.id, row })
+    });
+    if(isFinal) showToast('📊 최종제출 완료 · Saved to Sheets');
+  } catch(e){
+    // 시트 저장 실패해도 localStorage는 유지되므로 조용히 처리
+    console.warn('Sheets 저장 실패:', e);
+  }
+}
+
+/* ─────────────────────────────────────────────
+   ADMIN VIEWS
+───────────────────────────────────────────── */
+function adminGo(view){
+  adminView=view;
+  document.querySelectorAll('.anav-btn').forEach((b,i)=>b.classList.toggle('on',['dashboard','list','sheets'][i]===view));
+  ({dashboard:renderAdminDashboard,list:renderAdminList,sheets:renderAdminSheets})[view]?.();
+}
+function renderAdminDashboard(){
+  const allE=[];
+  CANDIDATES.forEach(c=>{Object.keys(REVIEWERS).forEach(rvId=>{const k=getKey(rvId,c.id);if(evalData[k]?.submitted)allE.push({c,ev:evalData[k],rvId});});});
+  const total=CANDIDATES.length,done=new Set(allE.map(e=>e.c.id)).size;
+  const grades={S:0,A:0,'B+':0,B:0,C:0};const scores=allE.map(e=>calcTotal(e.ev));
+  allE.forEach(e=>grades[getGrade(calcTotal(e.ev))]++);
+  const avg=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length*10)/10:'-';
+  const grRows=['S','A','B+','B','C'].map(g=>{const cnt=grades[g];const pct=allE.length?Math.round(cnt/allE.length*100):0;return`<div class="grade-row"><div class="gr-lbl" style="color:${gradeColor(g)}">${g}</div><div class="gr-desc">${{S:'95+',A:'90+','B+':'85+',B:'80+',C:'~79'}[g]}</div><div class="gr-bar"><div class="gr-fill" style="width:${pct}%;background:${gradeColor(g)}"></div></div><div class="gr-cnt">${cnt}명</div></div>`;}).join('');
+  document.getElementById('admin-body').innerHTML=`
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-val">${total}</div><div class="stat-lbl">전체 인원 · Total</div></div>
+      <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-val">${done}</div><div class="stat-lbl">평가 완료 · Evaluated</div></div>
+      <div class="stat-card"><div class="stat-icon">📊</div><div class="stat-val">${avg}</div><div class="stat-lbl">평균 점수 · Avg</div></div>
+      <div class="stat-card"><div class="stat-icon">🏆</div><div class="stat-val">${grades['S']}</div><div class="stat-lbl">S등급 · S Grade</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+      <div class="grade-breakdown"><div class="gbk-title">등급 분포 · Grade Distribution</div>${grRows}</div>
+      <div class="settings-card" style="margin:0">
+        <div class="sc-title">평가 항목별 평균 · Avg by Criteria</div>
+        ${CRITERIA.map(cr=>{const vals=allE.map(e=>e.ev.scores[cr.key]||0);const av=vals.length?(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1):'-';const pct=vals.length?Math.round(parseFloat(av)/cr.max*100):0;return`<div class="grade-row"><div style="font-size:10px;font-weight:700;width:80px;flex-shrink:0;color:var(--text2)">${cr.ko.split('·')[0].trim()}</div><div class="gr-bar"><div class="gr-fill" style="width:${pct}%;background:var(--accent2)"></div></div><div class="gr-cnt">${av}</div></div>`;}).join('')}
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="tbl-toolbar"><div class="tbl-title">전체 현황 · Overall</div></div>
+      <table class="tbl"><thead><tr><th>이름</th><th>사번</th><th>1차 OJT</th><th>2차 OJT</th><th>그룹</th><th>참석여부</th><th>총점</th><th>등급</th><th>상태</th></tr></thead>
+      <tbody>${CANDIDATES.map(c=>{const sub=Object.keys(REVIEWERS).map(rvId=>evalData[getKey(rvId,c.id)]).find(e=>e?.submitted);const t=sub?calcTotal(sub):null;const gr=sub?getGrade(t):null;return`<tr onclick="openCandModal('${c.id}')"><td class="td-name">${c.name}${!c.active?'<span style="font-size:9px;color:var(--text4);margin-left:4px">(비활성)</span>':''}</td><td style="font-size:10px;color:var(--text3)">${c.id}</td><td><span class="dept-tag">${c.ojt1||'-'}</span></td><td><span class="dept-tag">${c.ojt2||'-'}</span></td><td style="font-size:11px;color:var(--text3)">${c.group||'-'}</td><td style="font-size:11px">${sub?.attendance||'-'}</td><td>${sub?`<div class="score-cell"><div class="mini-bar"><div class="mini-fill" style="width:${t}%"></div></div><span class="score-txt">${t}</span></div>`:'<span style="color:var(--text4)">-</span>'}</td><td>${gr?`<span style="font-family:Bebas Neue;font-size:14px;color:${gradeColor(gr)}">${gr}</span>`:'-'}</td><td><span class="bd ${sub?'bd-done':'bd-todo'}">${sub?'완료':'미완료'}</span></td></tr>`;}).join('')}</tbody>
+      </table>
+    </div>`;
+}
+function renderAdminList(){
+  document.getElementById('admin-body').innerHTML=`
+    <div class="table-card">
+      <div class="tbl-toolbar"><div class="tbl-title">인원 목록 · Candidate List</div>
+        <select class="fsel" onchange="adminListFilter(this)"><option value="">전체 · All</option><option value="done">완료 · Done</option><option value="todo">미완료 · Pending</option></select>
+      </div>
+      <table class="tbl" id="al-tbl"><thead><tr><th>#</th><th>이름</th><th>사번</th><th>그룹</th><th>활성</th><th>참석여부</th><th>총점</th><th>등급</th><th>상태</th><th></th></tr></thead>
+      <tbody>${renderALRows('')}</tbody></table>
+    </div>`;
+}
+function renderALRows(filter){
+  return CANDIDATES.filter(c=>{const sub=Object.keys(REVIEWERS).map(rvId=>evalData[getKey(rvId,c.id)]).find(e=>e?.submitted);if(filter==='done'&&!sub)return false;if(filter==='todo'&&sub)return false;return true;}).map((c,i)=>{
+    const sub=Object.keys(REVIEWERS).map(rvId=>evalData[getKey(rvId,c.id)]).find(e=>e?.submitted);const t=sub?calcTotal(sub):null;const gr=sub?getGrade(t):null;
+    return`<tr onclick="openCandModal('${c.id}')"><td style="color:var(--text4)">${String(i+1).padStart(2,'0')}</td><td class="td-name">${c.name}</td><td style="font-size:10px;color:var(--text3)">${c.id}</td><td style="font-size:11px">${c.group||'-'}</td><td><span class="bd" style="background:${c.active?'rgba(45,106,79,0.2)':'rgba(100,100,100,0.15)'}; color:${c.active?'var(--accent3)':'var(--text3)'}">${c.active?'Y활성':'N비활성'}</span></td><td style="font-size:11px">${sub?.attendance||'-'}</td><td>${sub?`<b style="color:var(--accent)">${t}</b>`:'-'}</td><td>${gr?`<span style="font-family:Bebas Neue;font-size:14px;color:${gradeColor(gr)}">${gr}</span>`:'-'}</td><td><span class="bd ${sub?'bd-done':'bd-todo'}">${sub?'완료':'미완료'}</span></td><td><button onclick="event.stopPropagation();openCandModal('${c.id}')" style="padding:3px 8px;background:var(--surface2);border:1px solid var(--border);font-size:10px;cursor:pointer;font-family:inherit">상세</button></td></tr>`;
+  }).join('');
+}
+function adminListFilter(sel){const tb=document.querySelector('#al-tbl tbody');if(tb)tb.innerHTML=renderALRows(sel.value);}
+
+function renderAdminSheets(){
+  document.getElementById('admin-body').innerHTML=`
+    <div class="settings-card" style="max-width:820px">
+      <div class="sc-title">Google Sheets 연동 설정 · Integration Settings</div>
+      <div class="sheets-row">
+        <div class="sh-dot ${SHEETS_CFG.connected?'ok':''}" id="sh-dot"></div>
+        <span class="sh-txt" id="sh-txt">${SHEETS_CFG.connected?'연동됨 · Connected':'미연동 · Not Connected'}</span>
+        ${SHEETS_CFG.connected&&SHEETS_CFG.sheetUrl?`<a href="${SHEETS_CFG.sheetUrl}" target="_blank" style="font-size:11px;color:var(--accent);margin-left:10px">📊 시트 열기 · Open Sheet</a>`:''}
+      </div>
+      <div class="form-group" style="margin-bottom:14px"><label class="form-label">Apps Script Web App URL</label><input class="form-input" id="sh-url" value="${SHEETS_CFG.scriptUrl||''}" placeholder="https://script.google.com/macros/s/.../exec"></div>
+      <div class="form-group" style="margin-bottom:18px"><label class="form-label">Google Sheets URL (참고용)</label><input class="form-input" id="sh-surl" value="${SHEETS_CFG.sheetUrl||''}" placeholder="https://docs.google.com/spreadsheets/d/..."></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
+        <button class="save-btn" style="width:auto;padding:10px 20px;margin-top:0" onclick="saveSheetsCfg()">💾 설정 저장 · Save</button>
+        <button class="save-btn" style="width:auto;padding:10px 20px;margin-top:0;background:var(--accent2)" onclick="adminSync()">🔄 전체 동기화 · Full Sync</button>
+      </div>
+      <div id="sh-status" style="font-size:12px;color:var(--text3);margin-bottom:18px"></div>
+
+
+    </div>`;
+}
+function saveSheetsCfg(){
+  SHEETS_CFG.scriptUrl=(document.getElementById('sh-url')||{}).value?.trim()||'';
+  SHEETS_CFG.sheetUrl=(document.getElementById('sh-surl')||{}).value?.trim()||'';
+  SHEETS_CFG.connected=!!SHEETS_CFG.scriptUrl;
+  saveLS();showToast('✅ 설정 저장됨 · Settings saved');renderAdminSheets();
+}
+async function adminSync(){
+  const s=document.getElementById('sh-status');if(s)s.innerHTML='<span style="color:var(--accent2)">⏳ 동기화 중... · Syncing...</span>';
+  const ok=await syncAll(true);
+  if(s)s.innerHTML=`<span style="color:${ok?'var(--accent3)':'var(--red)'}">${ok?'✅ 완료 · Done':'⚠ 실패 · Failed'} · ${new Date().toLocaleTimeString('ko')}</span>`;
+  showToast(ok?'✅ 동기화 완료':'⚠ 동기화 실패');
+}
+
+/* ─────────────────────────────────────────────
+   MODAL
+───────────────────────────────────────────── */
+function openCandModal(candId){
+  const c=CANDIDATES.find(x=>x.id===candId);
+  const allE=Object.keys(REVIEWERS).map(rvId=>({rvId,ev:evalData[getKey(rvId,candId)]})).filter(x=>x.ev?.submitted);
+  const ev=allE[0]?.ev;const total=ev?calcTotal(ev):null;const gr=ev?getGrade(total):null;
+  document.getElementById('modal-content').innerHTML=`
+    <div class="modal-name">${c.name} <span style="font-size:13px;font-weight:400;color:var(--text3)">${c.active?'':'(비활성)'}</span></div>
+    <div class="modal-sub">${c.id} · ${c.ojt1||''} → ${c.ojt2||''} · 그룹: ${c.group||'-'}</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:16px">${c.project||''}</div>
+    ${ev?`
+      <div class="modal-total-row">
+        <span class="modal-total-lbl">총점 · Total</span>
+        <div style="display:flex;align-items:center;gap:14px">
+          <span class="modal-total-val">${total} / 100</span>
+          <span class="modal-grade" style="color:${gradeColor(gr)}">${gr}</span>
+        </div>
+      </div>
+      ${ev.attendance?`<div style="padding:8px 12px;background:var(--surface2);border:1px solid var(--border);margin-bottom:12px;font-size:12px"><b>참석여부 · Attendance:</b> ${ev.attendance}</div>`:''}
+      <div class="modal-score-grid">
+        ${CRITERIA.map(cr=>`<div class="modal-si"><span class="modal-sk">${cr.ko.split('·')[0].trim()}</span><span class="modal-sv">${ev.scores[cr.key]||0}<small style="font-size:10px;color:var(--text3)">/${cr.max}</small></span></div>`).join('')}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div><div class="modal-cl">잘한 점 · Strengths</div><div class="modal-cb">${ev.good||'(없음)'}</div></div>
+        <div><div class="modal-cl">개선 점 · Improvement</div><div class="modal-cb">${ev.improve||'(없음)'}</div></div>
+      </div>
+      <div style="font-size:11px;color:var(--text4);text-align:right;margin-top:10px">제출: ${ev.submittedAt?new Date(ev.submittedAt).toLocaleString('ko'):'-'}</div>
+    `:`<div class="empty-state" style="padding:40px"><div class="empty-txt">평가 미완료 · Not yet evaluated</div></div>`}`;
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal(){document.getElementById('modal').classList.remove('open');}
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal();});
+</script>
+</body>
+</html>
