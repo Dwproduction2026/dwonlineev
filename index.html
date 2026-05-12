@@ -324,7 +324,6 @@ body::after {
 
 <div id="sync-banner"></div>
 
-<!-- SPLASH -->
 <div id="splash" class="screen active">
   <div class="sp-grid"></div>
   <div class="sp-deco">EVAL</div>
@@ -336,7 +335,6 @@ body::after {
   </div>
 </div>
 
-<!-- LOGIN -->
 <div id="login" class="screen">
   <div class="login-wrap">
     <button class="login-back" onclick="go('splash')">← 뒤로 · Back</button>
@@ -364,7 +362,6 @@ body::after {
   </div>
 </div>
 
-<!-- REVIEWER -->
 <div id="reviewer" class="screen">
   <div class="app-layout">
     <div class="sidebar">
@@ -393,7 +390,6 @@ body::after {
   </div>
 </div>
 
-<!-- ADMIN -->
 <div id="adminScreen" class="screen">
   <div class="main-hdr" style="border-bottom:1px solid var(--border);background:var(--surface);padding:18px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
     <div><div class="main-title">관리자 대시보드 · Admin Dashboard</div><div class="main-sub">온라인 과제평가 시스템 · Online Assignment Evaluation</div></div>
@@ -407,12 +403,10 @@ body::after {
   <div class="main-body" id="admin-body"></div>
 </div>
 
-<!-- MODAL -->
 <div class="modal-ov" id="modal">
   <div class="modal"><button class="modal-close" onclick="closeModal()">✕</button><div id="modal-content"></div></div>
 </div>
 
-<!-- TOAST -->
 <div class="toast" id="toast"><span id="toast-msg"></span></div>
 
 <script>
@@ -512,14 +506,14 @@ const CAT_LABELS = {common:'공통 · Common',learn:'학습/실행 · Learn & Ex
 const CAT_PCT   = {common:'20%',learn:'25%',fb:'25%',comm:'20%',part:'10%'};
 
 /* ─────────────────────────────────────────────
-   DATA
+   DATA (UID 추가됨)
 ───────────────────────────────────────────── */
 let REVIEWERS = {'2220343':{pw:'1234',name:'김민수',dept:'인사팀',group:''}};
 let CANDIDATES = [
-  {id:'I2025001',name:'강다은', ojt1:'마케팅팀',ojt2:'전략기획팀',project:'SNS 광고 최적화 전략',group:'A그룹',active:true},
-  {id:'I2025002',name:'오준혁', ojt1:'개발팀',  ojt2:'QA팀',      project:'사내 업무 자동화 툴',  group:'A그룹',active:true},
-  {id:'I2025003',name:'한소희', ojt1:'기획팀',  ojt2:'마케팅팀',  project:'신규 서비스 기획안',   group:'B그룹',active:true},
-  {id:'I2025004',name:'윤재원', ojt1:'데이터팀',ojt2:'개발팀',    project:'고객 이탈 예측 모델링',group:'B그룹',active:true},
+  {uid:'I2025001|||SNS 광고 최적화 전략', id:'I2025001',name:'강다은', ojt1:'마케팅팀',ojt2:'전략기획팀',project:'SNS 광고 최적화 전략',group:'A그룹',active:true},
+  {uid:'I2025002|||사내 업무 자동화 툴', id:'I2025002',name:'오준혁', ojt1:'개발팀',  ojt2:'QA팀',      project:'사내 업무 자동화 툴',  group:'A그룹',active:true},
+  {uid:'I2025003|||신규 서비스 기획안', id:'I2025003',name:'한소희', ojt1:'기획팀',  ojt2:'마케팅팀',  project:'신규 서비스 기획안',   group:'B그룹',active:true},
+  {uid:'I2025004|||고객 이탈 예측 모델링', id:'I2025004',name:'윤재원', ojt1:'데이터팀',ojt2:'개발팀',    project:'고객 이탈 예측 모델링',group:'B그룹',active:true},
 ];
 let SHEETS_CFG = {
   scriptUrl: 'https://script.google.com/macros/s/AKfycbxyXcc6vwk8KWfEH8zpUJU3d4VtyPvbr9MDTBGU7T-o1oX0ReqOr0LQQrvZP8I-7fCfiw/exec',
@@ -552,7 +546,6 @@ loadLS();
 
 /* ─────────────────────────────────────────────
    GOOGLE SHEETS SYNC
-   그룹 매핑: 인원목록 F열(그룹) = 평가자목록 E열(그룹)
 ───────────────────────────────────────────── */
 async function fetchSheet(name) {
   if (!SHEETS_CFG.scriptUrl) return [];
@@ -568,31 +561,34 @@ async function syncAll(silent) {
   try {
     const [candRows, rvRows] = await Promise.all([fetchSheet('인원목록'), fetchSheet('평가자목록')]);
 
-    // 인원목록: A사번 B이름 C1차OJT D2차OJT E과제명 F그룹 G활성화(Y/N)
     if (candRows.length) {
-      CANDIDATES = candRows.map(row => ({
-        id:      String(row[0]||'').trim(),
-        name:    String(row[1]||'').trim(),
-        ojt1:    String(row[2]||'').trim(),
-        ojt2:    String(row[3]||'').trim(),
-        project: String(row[4]||'').trim(),
-        group:   String(row[5]||'').trim(),
-        active:  String(row[6]||'').trim().toUpperCase() === 'Y',
-      })).filter(c=>c.id&&c.name);
+      CANDIDATES = candRows.map(row => {
+        const id = String(row[0]||'').trim();
+        const project = String(row[4]||'').trim();
+        return {
+          uid:     id + '|||' + project, // UID 추가 (사번 + 과제명)
+          id:      id,
+          name:    String(row[1]||'').trim(),
+          ojt1:    String(row[2]||'').trim(),
+          ojt2:    String(row[3]||'').trim(),
+          project: project,
+          group:   String(row[5]||'').trim(),
+          active:  String(row[6]||'').trim().toUpperCase() === 'Y',
+        }
+      }).filter(c=>c.id&&c.name);
     }
 
-    // 평가자목록: A사번 B이름 C부서 D비밀번호 E그룹 F활성화(Y/N)
     if (rvRows.length) {
       REVIEWERS = {};
       rvRows.forEach(row => {
         const id = String(row[0]||'').trim(); if(!id) return;
         const activeFlag = String(row[5]||'').trim().toUpperCase();
-        if (activeFlag !== 'Y') return; // Y일 때만 활성 평가자로 등록
+        if (activeFlag !== 'Y') return;
         REVIEWERS[id] = {
           name:   String(row[1]||'').trim(),
           dept:   String(row[2]||'').trim(),
           pw:     String(row[3]||'').trim()||id,
-          group:  String(row[4]||'').trim(),  // E열 그룹
+          group:  String(row[4]||'').trim(),
           active: true,
         };
       });
@@ -607,21 +603,22 @@ async function syncAll(silent) {
   }
 }
 
-// 다른 기기에서 로그인 시: 평가결과 시트에서 본인 평가 데이터 복원
 async function loadMyEvalFromSheet(rvId) {
   if (!SHEETS_CFG.scriptUrl) return;
   try {
     const rows = await fetchSheet('평가결과');
     if (!rows.length) return;
-    // 헤더행: A평가자사번(0) D대상자사번(3) I~Q점수(8~16) R총점(17) S등급(18) T잘한점(19) U개선점(20) V참석여부(21) W제출시각(22) X저장상태(23)
     const SCORE_KEYS = ['c1','c2','l1','l2','l3','f1','f2','d1','p1'];
     rows.forEach(row => {
       if (String(row[0]||'').trim() !== String(rvId).trim()) return;
       const candId = String(row[3]||'').trim();
+      const project = String(row[7]||'').trim(); // H열 과제명 반영
       if (!candId) return;
-      const k = getKey(rvId, candId);
+      
+      const candUid = candId + '|||' + project; // UID로 조합
+      const k = getKey(rvId, candUid);
+      
       const isFinal = String(row[23]||'').trim() === '최종제출';
-      // 로컬에 이미 최종제출 데이터가 있으면 시트 데이터로 덮어쓰지 않음
       if (evalData[k]?.submitted && !isFinal) return;
       const scores = {};
       SCORE_KEYS.forEach((key, i) => { scores[key] = Number(row[8 + i]||0); });
@@ -640,17 +637,14 @@ async function loadMyEvalFromSheet(rvId) {
   }
 }
 
-// 앱 시작 시 자동 동기화
 window.addEventListener('load', async function() {
   if (!SHEETS_CFG.scriptUrl) return;
   showBanner('⏳ 구글 시트에서 데이터를 불러오는 중... · Loading from Google Sheets...', '#E87722');
   const ok = await syncAll(true);
   showBanner(ok ? '✅ 데이터 동기화 완료 · Sync Complete' : '⚠ 동기화 실패 · Sync Failed', ok ? '#2A7D4F' : '#C8410A', 2500);
-  // 30초마다 백그라운드 자동 갱신 (여러 명 동시 사용 대응)
   setInterval(async () => {
     if (!SHEETS_CFG.scriptUrl) return;
     await syncAll(true);
-    // 로그인 상태면 목록 갱신
     if (currentUser && currentRole === 'reviewer') {
       myCandidates();
     }
@@ -664,16 +658,10 @@ function showBanner(msg, bg, dur) {
 }
 function var_(v){ return getComputedStyle(document.documentElement).getPropertyValue(v); }
 
-// 현재 평가자의 그룹에 속한 활성 인원만 반환
-// - 인원목록 G열 Y = 활성
-// - 평가자목록 F열 Y = 활성 (비활성이면 이미 REVIEWERS에서 제외됨)
-// - 인원목록 F열(그룹) = 평가자목록 E열(그룹) 일치 시 매핑
 function getMyCandidates() {
   if (!currentUser) return [];
   const myGroup = (REVIEWERS[currentUser.id]||{}).group||'';
-  // 활성 인원만 필터
-  let cands = CANDIDATES.filter(c => c.active === true);
-  // 그룹 매핑: 평가자 그룹명과 인원 그룹명이 일치하는 인원만
+  let cands = CANDIDATES.filter(c => c.active === true); // 이미 Y만 필터링됨
   if (myGroup) {
     cands = cands.filter(c => c.group.trim() === myGroup.trim());
   }
@@ -681,19 +669,19 @@ function getMyCandidates() {
 }
 
 /* ─────────────────────────────────────────────
-   STATE
+   STATE (UID 기반으로 변경)
 ───────────────────────────────────────────── */
-let currentUser=null, currentRole=null, selectedCandId=null;
+let currentUser=null, currentRole=null, selectedCandUid=null;
 let filteredCands=[], adminView='dashboard', rvView='eval';
 let autosaveTimer=null;
 
 /* ─────────────────────────────────────────────
-   HELPERS
+   HELPERS (UID 기반 키 생성)
 ───────────────────────────────────────────── */
 function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
-function getKey(rv,cand){return rv+':'+cand;}
-function getEval(rvId,candId){
-  const k=getKey(rvId,candId);
+function getKey(rv,candUid){return rv+':'+candUid;} // 이제 ID대신 UID(ID+과제명)를 씁니다.
+function getEval(rvId,candUid){
+  const k=getKey(rvId,candUid);
   if(!evalData[k]){evalData[k]={scores:{},attendance:'',good:'',improve:'',submitted:false,submittedAt:''};CRITERIA.forEach(c=>{evalData[k].scores[c.key]=0;});}
   return evalData[k];
 }
@@ -717,7 +705,6 @@ function loginReviewer(){
   const pw=document.getElementById('rv-pw').value;
 
   async function doLogin() {
-    // 시트 연동이 설정되어 있으면 로그인 전 최신 데이터 먼저 동기화
     if (SHEETS_CFG.scriptUrl) {
       showBanner('⏳ 최신 데이터 확인 중... · Syncing...', '#E87722');
       await syncAll(true);
@@ -728,7 +715,6 @@ function loginReviewer(){
       document.getElementById('rv-av').textContent=currentUser.name[0];
       document.getElementById('rv-name').textContent=currentUser.name;
       document.getElementById('rv-dept').textContent=currentUser.dept||id;
-      // 다른 기기 접속 시 시트에서 본인 평가 데이터 복원
       if (SHEETS_CFG.scriptUrl) {
         showBanner('⏳ 이전 평가 데이터 불러오는 중...', '#E87722');
         await loadMyEvalFromSheet(id);
@@ -747,7 +733,7 @@ function loginAdmin(){
   if(id==='intern321'&&pw==='intern321'){currentRole='admin';adminGo('dashboard');go('adminScreen');}
   else{document.getElementById('login-err').style.display='block';}
 }
-function logout(){currentUser=null;currentRole=null;selectedCandId=null;go('login');}
+function logout(){currentUser=null;currentRole=null;selectedCandUid=null;go('login');}
 
 /* ─────────────────────────────────────────────
    REVIEWER — CANDIDATE LIST
@@ -758,11 +744,11 @@ function renderCandList(){
   const el=document.getElementById('cand-list');
   if(!filteredCands.length){el.innerHTML='<div class="empty-state" style="padding:28px 12px"><div class="empty-txt">배정된 활성 인원 없음</div></div>';return;}
   el.innerHTML=filteredCands.map(c=>{
-    const ev=getEval(currentUser.id,c.id);
-    const total=calcTotal(ev);const grade=ev.submitted?getGrade(total):null;const on=selectedCandId===c.id;
-    return`<div class="sb-item${on?' on':''}" onclick="selectCand('${c.id}')">
+    const ev=getEval(currentUser.id, c.uid); // UID 적용
+    const total=calcTotal(ev);const grade=ev.submitted?getGrade(total):null;const on=selectedCandUid===c.uid;
+    return`<div class="sb-item${on?' on':''}" onclick="selectCand('${c.uid}')">
       <div class="sb-item-name">${c.name}</div>
-      <div class="sb-item-sub">${c.ojt1||''} → ${c.ojt2||''}</div>
+      <div class="sb-item-sub">${c.project||''}</div>
       <div class="sb-item-badges">
         <span class="bd ${ev.submitted?'bd-done':'bd-todo'}">${ev.submitted?'✓ 완료':'미완료'}</span>
         ${ev.submitted?`<span class="bd bd-grade">${grade}</span><span class="bd-score">${total}점</span>`:''}
@@ -772,7 +758,7 @@ function renderCandList(){
 }
 function updateRvProg(){
   if(!currentUser)return;
-  const done=filteredCands.filter(c=>evalData[getKey(currentUser.id,c.id)]?.submitted).length;
+  const done=filteredCands.filter(c=>evalData[getKey(currentUser.id, c.uid)]?.submitted).length;
   document.getElementById('rv-prog').textContent=done+' / '+filteredCands.length+' 완료 · Done';
 }
 
@@ -784,7 +770,7 @@ function rvTab(tab){
   document.querySelectorAll('.sb-tab').forEach((b,i)=>b.classList.toggle('on',(i===0&&tab==='eval')||(i===1&&tab==='dash')));
   const sw=document.getElementById('rv-sw');
   if(tab==='dash'){sw.style.display='none';renderRvDashboard();}
-  else{sw.style.display='';if(selectedCandId)renderEvalForm();else resetMain();}
+  else{sw.style.display='';if(selectedCandUid)renderEvalForm();else resetMain();}
 }
 function resetMain(){
   document.getElementById('rv-hdr-title').textContent='평가 대상자를 선택하세요 · Select a candidate';
@@ -800,32 +786,32 @@ function renderRvDashboard(){
   document.getElementById('rv-hdr-title').textContent='내 평가 현황 · My Status';
   document.getElementById('rv-hdr-sub').textContent=currentUser.name+' 님의 평가 요약';
   document.getElementById('as-ind').style.display='none';
-  const myIds=filteredCands.map(c=>c.id);
-  const submitted=myIds.filter(id=>evalData[getKey(currentUser.id,id)]?.submitted);
+  const myUids=filteredCands.map(c=>c.uid);
+  const submitted=myUids.filter(uid=>evalData[getKey(currentUser.id,uid)]?.submitted);
   const grades={S:0,A:0,'B+':0,B:0,C:0};const allS=[];
-  submitted.forEach(id=>{const ev=evalData[getKey(currentUser.id,id)];const t=calcTotal(ev);allS.push(t);grades[getGrade(t)]++;});
+  submitted.forEach(uid=>{const ev=evalData[getKey(currentUser.id,uid)];const t=calcTotal(ev);allS.push(t);grades[getGrade(t)]++;});
   const avg=allS.length?Math.round(allS.reduce((a,b)=>a+b,0)/allS.length*10)/10:'-';
   const grRows=['S','A','B+','B','C'].map(g=>{const cnt=grades[g];const pct=submitted.length?Math.round(cnt/submitted.length*100):0;return`<div class="grade-row"><div class="gr-lbl" style="color:${gradeColor(g)}">${g}</div><div class="gr-desc">${{S:'95+',A:'90+','B+':'85+',B:'80+',C:'~79'}[g]}</div><div class="gr-bar"><div class="gr-fill" style="width:${pct}%;background:${gradeColor(g)}"></div></div><div class="gr-cnt">${cnt}명</div></div>`;}).join('');
   document.getElementById('rv-body').innerHTML=`
     <div class="rv-dash-grid">
-      <div class="rv-stat"><div class="rv-stat-lbl">전체 대상 · Total</div><div class="rv-stat-val">${myIds.length}</div></div>
+      <div class="rv-stat"><div class="rv-stat-lbl">전체 대상 · Total</div><div class="rv-stat-val">${myUids.length}</div></div>
       <div class="rv-stat"><div class="rv-stat-lbl">평가 완료 · Done</div><div class="rv-stat-val">${submitted.length}</div></div>
       <div class="rv-stat"><div class="rv-stat-lbl">평균 점수 · Avg</div><div class="rv-stat-val">${avg}</div></div>
     </div>
     <div class="grade-breakdown"><div class="gbk-title">등급 현황 · Grade Distribution</div>${grRows}</div>
     <div class="table-card">
       <div class="tbl-toolbar"><div class="tbl-title">평가 결과 요약 · Summary</div></div>
-      <table class="tbl"><thead><tr><th>이름</th><th>1차 OJT</th><th>2차 OJT</th><th>총점</th><th>등급</th><th>상태</th></tr></thead>
-      <tbody>${filteredCands.map(c=>{const ev=evalData[getKey(currentUser.id,c.id)];const done=ev?.submitted;const t=done?calcTotal(ev):null;const gr=done?getGrade(t):'-';return`<tr onclick="selectCandAndEval('${c.id}')"><td class="td-name">${c.name}</td><td><span class="dept-tag">${c.ojt1||'-'}</span></td><td><span class="dept-tag">${c.ojt2||'-'}</span></td><td>${done?`<div class="score-cell"><div class="mini-bar"><div class="mini-fill" style="width:${t}%"></div></div><span class="score-txt">${t}</span></div>`:'<span style="color:var(--text4)">-</span>'}</td><td>${done?`<span style="font-family:Bebas Neue;font-size:15px;color:${gradeColor(gr)}">${gr}</span>`:'-'}</td><td><span class="bd ${done?'bd-done':'bd-todo'}">${done?'완료':'미완료'}</span></td></tr>`;}).join('')}</tbody>
+      <table class="tbl"><thead><tr><th>이름</th><th>과제명</th><th>총점</th><th>등급</th><th>상태</th></tr></thead>
+      <tbody>${filteredCands.map(c=>{const ev=evalData[getKey(currentUser.id,c.uid)];const done=ev?.submitted;const t=done?calcTotal(ev):null;const gr=done?getGrade(t):'-';return`<tr onclick="selectCandAndEval('${c.uid}')"><td class="td-name">${c.name}</td><td><span class="dept-tag">${c.project||'-'}</span></td><td>${done?`<div class="score-cell"><div class="mini-bar"><div class="mini-fill" style="width:${t}%"></div></div><span class="score-txt">${t}</span></div>`:'<span style="color:var(--text4)">-</span>'}</td><td>${done?`<span style="font-family:Bebas Neue;font-size:15px;color:${gradeColor(gr)}">${gr}</span>`:'-'}</td><td><span class="bd ${done?'bd-done':'bd-todo'}">${done?'완료':'미완료'}</span></td></tr>`;}).join('')}</tbody>
       </table>
     </div>`;
 }
-function selectCandAndEval(id){selectedCandId=id;rvTab('eval');renderCandList();}
+function selectCandAndEval(uid){selectedCandUid=uid;rvTab('eval');renderCandList();}
 
 /* ─────────────────────────────────────────────
    REVIEWER — EVAL FORM
 ───────────────────────────────────────────── */
-function selectCand(id){selectedCandId=id;rvView='eval';document.getElementById('rv-sw').style.display='';renderCandList();renderEvalForm();}
+function selectCand(uid){selectedCandUid=uid;rvView='eval';document.getElementById('rv-sw').style.display='';renderCandList();renderEvalForm();}
 
 function renderGuidePanel(key){
   const rows=GUIDES[key]||[];
@@ -864,8 +850,8 @@ function renderCI(cr, score){
 }
 
 function renderEvalForm(){
-  const c=CANDIDATES.find(x=>x.id===selectedCandId);if(!c)return;
-  const ev=getEval(currentUser.id,c.id);
+  const c=CANDIDATES.find(x=>x.uid===selectedCandUid);if(!c)return;
+  const ev=getEval(currentUser.id, c.uid);
   const total=calcTotal(ev);const grade=getGrade(total);
   document.getElementById('rv-hdr-title').textContent=c.name+' 님 평가 · Evaluation';
   document.getElementById('rv-hdr-sub').textContent=c.project||'';
@@ -940,8 +926,8 @@ function renderEvalForm(){
 }
 
 function setAttend(val){
-  if(!selectedCandId||!currentUser)return;
-  const ev=getEval(currentUser.id,selectedCandId);
+  if(!selectedCandUid||!currentUser)return;
+  const ev=getEval(currentUser.id,selectedCandUid);
   ev.attendance=val; triggerAS();
   document.querySelectorAll('.attend-btn').forEach(b=>{
     b.className='attend-btn';
@@ -952,11 +938,10 @@ function setAttend(val){
 }
 
 function setScore(key, val){
-  if(!selectedCandId||!currentUser) return;
-  const ev = getEval(currentUser.id, selectedCandId);
+  if(!selectedCandUid||!currentUser) return;
+  const ev = getEval(currentUser.id, selectedCandUid);
   ev.scores[key] = val;
 
-  // 해당 항목 버튼 UI 업데이트
   const scoreLabels = {1:'매우미흡', 2:'미흡', 3:'보통', 4:'우수', 5:'매우우수'};
   const ctrl = document.getElementById('sv-lbl-'+key)?.closest('.ci')?.querySelector('.score-ctrl');
   if(ctrl) {
@@ -967,7 +952,6 @@ function setScore(key, val){
   const lbl = document.getElementById('sv-lbl-'+key);
   if(lbl) lbl.textContent = `${val}점 · ${scoreLabels[val]}`;
 
-  // 총점 / 등급 업데이트
   const total = calcTotal(ev); const grade = getGrade(total);
   const td = document.getElementById('total-disp'); if(td) td.textContent = total;
   const gd = document.getElementById('grade-disp'); if(gd){ gd.textContent = grade; gd.className = 'grade-box '+gradeClass(grade); }
@@ -985,26 +969,25 @@ function triggerAS(){
   },800);
 }
 function autoSave(){
-  if(!selectedCandId||!currentUser)return;
-  const ev=getEval(currentUser.id,selectedCandId);
+  if(!selectedCandUid||!currentUser)return;
+  const ev=getEval(currentUser.id, selectedCandUid);
   const g=document.getElementById('ta-good'),im=document.getElementById('ta-improve');
   if(g)ev.good=g.value;if(im)ev.improve=im.value;
   saveLS();
-  // 구글 시트에도 임시저장 (draft) — 브라우저를 꺼도 시트에 남음
-  const c=CANDIDATES.find(x=>x.id===selectedCandId);
-  if(c) pushToSheets(c, ev, false); // false = 임시저장
+  const c=CANDIDATES.find(x=>x.uid===selectedCandUid);
+  if(c) pushToSheets(c, ev, false);
 }
 function submitEval(){
-  if(!selectedCandId||!currentUser)return;
+  if(!selectedCandUid||!currentUser)return;
   autoSave();
-  const ev=getEval(currentUser.id,selectedCandId);
+  const ev=getEval(currentUser.id, selectedCandUid);
   ev.submitted=true; ev.submittedAt=new Date().toISOString();
   saveLS(); renderCandList(); updateRvProg();
-  const c=CANDIDATES.find(x=>x.id===selectedCandId);
+  const c=CANDIDATES.find(x=>x.uid===selectedCandUid);
   const total=calcTotal(ev);
   showToast('✅ '+c.name+' 님 최종 제출 완료 · '+total+'점 ('+getGrade(total)+')');
   pushToSheets(c, ev, true);
-  // 버튼 및 상태 표시 업데이트
+  
   const btn=document.getElementById('submit-btn-bottom');
   if(btn){ btn.textContent='✅ 최종 제출 완료 · Submitted'; btn.style.background='var(--accent3)'; }
   const dot=document.getElementById('as-dot');
@@ -1021,23 +1004,20 @@ function bulkSubmitAll(){
   const myCands = getMyCandidates();
   if(!myCands.length){ showToast('⚠ 배정된 평가 대상자가 없습니다'); return; }
 
-  // 1. 미완료 항목 체크 (모든 점수 1점 이상)
   const incomplete = [];
   myCands.forEach(c => {
-    const ev = getEval(currentUser.id, c.id);
+    const ev = getEval(currentUser.id, c.uid);
     const allScored = CRITERIA.every(cr => (ev.scores[cr.key]||0) >= 1);
-    if(!allScored) incomplete.push(c.name);
+    if(!allScored) incomplete.push(`${c.name} (${c.project})`);
   });
 
-  // 2. 미완료 있으면 경고 모달
   if(incomplete.length > 0){
     document.getElementById('modal-content').innerHTML = `
       <div style="font-size:18px;font-weight:800;margin-bottom:12px;color:var(--red)">⚠ 평가 미완료 항목 있음</div>
       <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.8">
         아래 대상자의 모든 평가 항목을 입력해야 최종제출이 가능합니다.<br>
-        <span style="font-size:11px;color:var(--text3)">All criteria must be scored before final submission.</span>
       </div>
-      <div style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--red);padding:14px;margin-bottom:16px">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--red);padding:14px;margin-bottom:16px;max-height:200px;overflow-y:auto;">
         ${incomplete.map(name=>`<div style="padding:4px 0;font-size:13px;font-weight:700;color:var(--red)">• ${name}</div>`).join('')}
       </div>
       <button onclick="closeModal()" style="width:100%;padding:12px;background:var(--accent);color:#fff;border:none;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">확인 · OK</button>`;
@@ -1045,25 +1025,22 @@ function bulkSubmitAll(){
     return;
   }
 
-  // 3. 이미 전체 제출된 경우
-  const alreadyAll = myCands.every(c => getEval(currentUser.id, c.id).submitted);
+  const alreadyAll = myCands.every(c => getEval(currentUser.id, c.uid).submitted);
   if(alreadyAll){ showToast('✅ 이미 모든 평가가 최종제출 완료되었습니다'); return; }
 
-  // 4. 최종 확인 모달
-  const notSubmitted = myCands.filter(c => !getEval(currentUser.id, c.id).submitted);
+  const notSubmitted = myCands.filter(c => !getEval(currentUser.id, c.uid).submitted);
   document.getElementById('modal-content').innerHTML = `
     <div style="font-size:18px;font-weight:800;margin-bottom:12px">✅ 전체 최종제출 확인</div>
     <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.8">
-      ${notSubmitted.length}명의 평가를 전체 최종제출합니다.<br>최종제출 후에는 수정이 불가능합니다.<br>
-      <span style="font-size:11px;color:var(--text3)">Submit all ${notSubmitted.length} evaluations. This cannot be undone.</span>
+      ${notSubmitted.length}건의 과제 평가를 전체 최종제출합니다.<br>최종제출 후에는 수정이 불가능합니다.
     </div>
-    <div style="background:var(--surface2);border:1px solid var(--border);padding:14px;margin-bottom:16px">
+    <div style="background:var(--surface2);border:1px solid var(--border);padding:14px;margin-bottom:16px;max-height:200px;overflow-y:auto;">
       ${notSubmitted.map(c=>{
-        const ev=getEval(currentUser.id,c.id);
+        const ev=getEval(currentUser.id, c.uid);
         const total=calcTotal(ev);
         const grade=getGrade(total);
         return`<div style="padding:5px 0;font-size:13px;display:flex;justify-content:space-between;border-bottom:1px solid var(--border)">
-          <span style="font-weight:700">${c.name}</span>
+          <span style="font-weight:700">${c.name} <span style="font-size:11px;font-weight:400;color:var(--text3)">(${c.project})</span></span>
           <span><b style="color:var(--accent)">${total}점</b> <span style="color:var(--text3);font-size:11px">(${grade})</span></span>
         </div>`;
       }).join('')}
@@ -1081,10 +1058,9 @@ async function confirmBulkSubmit(){
   const myCands = getMyCandidates();
   let count = 0;
   for(const c of myCands){
-    const ev = getEval(currentUser.id, c.id);
+    const ev = getEval(currentUser.id, c.uid);
     if(ev.submitted) continue;
-    // 현재 선택된 인원이면 입력창 텍스트 반영
-    if(selectedCandId === c.id){
+    if(selectedCandUid === c.uid){
       const g=document.getElementById('ta-good'), im=document.getElementById('ta-improve');
       if(g) ev.good=g.value; if(im) ev.improve=im.value;
     }
@@ -1094,20 +1070,10 @@ async function confirmBulkSubmit(){
     count++;
   }
   renderCandList(); updateRvProg();
-  showToast('✅ '+count+'명 전체 최종제출 완료!');
-  if(selectedCandId) renderEvalForm();
+  showToast('✅ '+count+'건 전체 최종제출 완료!');
+  if(selectedCandUid) renderEvalForm();
 }
 
-/* ─────────────────────────────────────────────
-   GOOGLE SHEETS PUSH (UPSERT 방식)
-   컬럼 순서 (A~X):
-   A평가자사번 B평가자명 C평가자부서 D대상자사번 E대상자명 F1차OJT G2차OJT H과제명
-   I공통1 J공통2 K학습1 L학습2 M학습3 N피드백1 O피드백2 P전달력 Q참여도
-   R총점 S등급 T잘한점 U개선점 V참석여부 W제출시각 X저장상태(임시저장/최종제출)
-
-   upsert 방식: 같은 평가자사번+대상자사번 행이 있으면 덮어쓰기, 없으면 추가
-   → 자동저장 때마다 호출되어도 행이 중복 생성되지 않음
-───────────────────────────────────────────── */
 async function pushToSheets(cand, ev, isFinal){
   if(!SHEETS_CFG.scriptUrl) return;
   const rv=currentUser;
@@ -1123,19 +1089,18 @@ async function pushToSheets(cand, ev, isFinal){
     ev.scores.d1||0, ev.scores.p1||0,
     total, grade,
     ev.good||'', ev.improve||'',
-    ev.attendance||'',  // V열 참석여부
-    submittedAt,        // W열 제출시각
-    status              // X열 저장상태
+    ev.attendance||'',
+    submittedAt,
+    status
   ];
   try {
     await fetch(SHEETS_CFG.scriptUrl, {
       method:'POST',
       headers:{'Content-Type':'text/plain'},
-      body: JSON.stringify({ type:'eval_upsert', rvId:rv.id, candId:cand.id, row })
+      body: JSON.stringify({ type:'eval_upsert', rvId:rv.id, candId:cand.id, row }) 
     });
     if(isFinal) showToast('📊 최종제출 완료 · Saved to Sheets');
   } catch(e){
-    // 시트 저장 실패해도 localStorage는 유지되므로 조용히 처리
     console.warn('Sheets 저장 실패:', e);
   }
 }
@@ -1150,15 +1115,15 @@ function adminGo(view){
 }
 function renderAdminDashboard(){
   const allE=[];
-  CANDIDATES.forEach(c=>{Object.keys(REVIEWERS).forEach(rvId=>{const k=getKey(rvId,c.id);if(evalData[k]?.submitted)allE.push({c,ev:evalData[k],rvId});});});
-  const total=CANDIDATES.length,done=new Set(allE.map(e=>e.c.id)).size;
+  CANDIDATES.forEach(c=>{Object.keys(REVIEWERS).forEach(rvId=>{const k=getKey(rvId,c.uid);if(evalData[k]?.submitted)allE.push({c,ev:evalData[k],rvId});});});
+  const total=CANDIDATES.length,done=new Set(allE.map(e=>e.c.uid)).size;
   const grades={S:0,A:0,'B+':0,B:0,C:0};const scores=allE.map(e=>calcTotal(e.ev));
   allE.forEach(e=>grades[getGrade(calcTotal(e.ev))]++);
   const avg=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length*10)/10:'-';
   const grRows=['S','A','B+','B','C'].map(g=>{const cnt=grades[g];const pct=allE.length?Math.round(cnt/allE.length*100):0;return`<div class="grade-row"><div class="gr-lbl" style="color:${gradeColor(g)}">${g}</div><div class="gr-desc">${{S:'95+',A:'90+','B+':'85+',B:'80+',C:'~79'}[g]}</div><div class="gr-bar"><div class="gr-fill" style="width:${pct}%;background:${gradeColor(g)}"></div></div><div class="gr-cnt">${cnt}명</div></div>`;}).join('');
   document.getElementById('admin-body').innerHTML=`
     <div class="stat-grid">
-      <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-val">${total}</div><div class="stat-lbl">전체 인원 · Total</div></div>
+      <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-val">${total}</div><div class="stat-lbl">전체 과제 배정 · Total</div></div>
       <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-val">${done}</div><div class="stat-lbl">평가 완료 · Evaluated</div></div>
       <div class="stat-card"><div class="stat-icon">📊</div><div class="stat-val">${avg}</div><div class="stat-lbl">평균 점수 · Avg</div></div>
       <div class="stat-card"><div class="stat-icon">🏆</div><div class="stat-val">${grades['S']}</div><div class="stat-lbl">S등급 · S Grade</div></div>
@@ -1172,8 +1137,8 @@ function renderAdminDashboard(){
     </div>
     <div class="table-card">
       <div class="tbl-toolbar"><div class="tbl-title">전체 현황 · Overall</div></div>
-      <table class="tbl"><thead><tr><th>이름</th><th>사번</th><th>1차 OJT</th><th>2차 OJT</th><th>그룹</th><th>참석여부</th><th>총점</th><th>등급</th><th>상태</th></tr></thead>
-      <tbody>${CANDIDATES.map(c=>{const sub=Object.keys(REVIEWERS).map(rvId=>evalData[getKey(rvId,c.id)]).find(e=>e?.submitted);const t=sub?calcTotal(sub):null;const gr=sub?getGrade(t):null;return`<tr onclick="openCandModal('${c.id}')"><td class="td-name">${c.name}${!c.active?'<span style="font-size:9px;color:var(--text4);margin-left:4px">(비활성)</span>':''}</td><td style="font-size:10px;color:var(--text3)">${c.id}</td><td><span class="dept-tag">${c.ojt1||'-'}</span></td><td><span class="dept-tag">${c.ojt2||'-'}</span></td><td style="font-size:11px;color:var(--text3)">${c.group||'-'}</td><td style="font-size:11px">${sub?.attendance||'-'}</td><td>${sub?`<div class="score-cell"><div class="mini-bar"><div class="mini-fill" style="width:${t}%"></div></div><span class="score-txt">${t}</span></div>`:'<span style="color:var(--text4)">-</span>'}</td><td>${gr?`<span style="font-family:Bebas Neue;font-size:14px;color:${gradeColor(gr)}">${gr}</span>`:'-'}</td><td><span class="bd ${sub?'bd-done':'bd-todo'}">${sub?'완료':'미완료'}</span></td></tr>`;}).join('')}</tbody>
+      <table class="tbl"><thead><tr><th>이름</th><th>사번</th><th>과제명</th><th>그룹</th><th>참석여부</th><th>총점</th><th>등급</th><th>상태</th></tr></thead>
+      <tbody>${CANDIDATES.map(c=>{const sub=Object.keys(REVIEWERS).map(rvId=>evalData[getKey(rvId,c.uid)]).find(e=>e?.submitted);const t=sub?calcTotal(sub):null;const gr=sub?getGrade(t):null;return`<tr onclick="openCandModal('${c.uid}')"><td class="td-name">${c.name}${!c.active?'<span style="font-size:9px;color:var(--text4);margin-left:4px">(비활성)</span>':''}</td><td style="font-size:10px;color:var(--text3)">${c.id}</td><td><span class="dept-tag">${c.project||'-'}</span></td><td style="font-size:11px;color:var(--text3)">${c.group||'-'}</td><td style="font-size:11px">${sub?.attendance||'-'}</td><td>${sub?`<div class="score-cell"><div class="mini-bar"><div class="mini-fill" style="width:${t}%"></div></div><span class="score-txt">${t}</span></div>`:'<span style="color:var(--text4)">-</span>'}</td><td>${gr?`<span style="font-family:Bebas Neue;font-size:14px;color:${gradeColor(gr)}">${gr}</span>`:'-'}</td><td><span class="bd ${sub?'bd-done':'bd-todo'}">${sub?'완료':'미완료'}</span></td></tr>`;}).join('')}</tbody>
       </table>
     </div>`;
 }
@@ -1183,14 +1148,14 @@ function renderAdminList(){
       <div class="tbl-toolbar"><div class="tbl-title">인원 목록 · Candidate List</div>
         <select class="fsel" onchange="adminListFilter(this)"><option value="">전체 · All</option><option value="done">완료 · Done</option><option value="todo">미완료 · Pending</option></select>
       </div>
-      <table class="tbl" id="al-tbl"><thead><tr><th>#</th><th>이름</th><th>사번</th><th>그룹</th><th>활성</th><th>참석여부</th><th>총점</th><th>등급</th><th>상태</th><th></th></tr></thead>
+      <table class="tbl" id="al-tbl"><thead><tr><th>#</th><th>이름</th><th>과제명</th><th>그룹</th><th>활성</th><th>참석여부</th><th>총점</th><th>등급</th><th>상태</th><th></th></tr></thead>
       <tbody>${renderALRows('')}</tbody></table>
     </div>`;
 }
 function renderALRows(filter){
-  return CANDIDATES.filter(c=>{const sub=Object.keys(REVIEWERS).map(rvId=>evalData[getKey(rvId,c.id)]).find(e=>e?.submitted);if(filter==='done'&&!sub)return false;if(filter==='todo'&&sub)return false;return true;}).map((c,i)=>{
-    const sub=Object.keys(REVIEWERS).map(rvId=>evalData[getKey(rvId,c.id)]).find(e=>e?.submitted);const t=sub?calcTotal(sub):null;const gr=sub?getGrade(t):null;
-    return`<tr onclick="openCandModal('${c.id}')"><td style="color:var(--text4)">${String(i+1).padStart(2,'0')}</td><td class="td-name">${c.name}</td><td style="font-size:10px;color:var(--text3)">${c.id}</td><td style="font-size:11px">${c.group||'-'}</td><td><span class="bd" style="background:${c.active?'rgba(45,106,79,0.2)':'rgba(100,100,100,0.15)'}; color:${c.active?'var(--accent3)':'var(--text3)'}">${c.active?'Y활성':'N비활성'}</span></td><td style="font-size:11px">${sub?.attendance||'-'}</td><td>${sub?`<b style="color:var(--accent)">${t}</b>`:'-'}</td><td>${gr?`<span style="font-family:Bebas Neue;font-size:14px;color:${gradeColor(gr)}">${gr}</span>`:'-'}</td><td><span class="bd ${sub?'bd-done':'bd-todo'}">${sub?'완료':'미완료'}</span></td><td><button onclick="event.stopPropagation();openCandModal('${c.id}')" style="padding:3px 8px;background:var(--surface2);border:1px solid var(--border);font-size:10px;cursor:pointer;font-family:inherit">상세</button></td></tr>`;
+  return CANDIDATES.filter(c=>{const sub=Object.keys(REVIEWERS).map(rvId=>evalData[getKey(rvId,c.uid)]).find(e=>e?.submitted);if(filter==='done'&&!sub)return false;if(filter==='todo'&&sub)return false;return true;}).map((c,i)=>{
+    const sub=Object.keys(REVIEWERS).map(rvId=>evalData[getKey(rvId,c.uid)]).find(e=>e?.submitted);const t=sub?calcTotal(sub):null;const gr=sub?getGrade(t):null;
+    return`<tr onclick="openCandModal('${c.uid}')"><td style="color:var(--text4)">${String(i+1).padStart(2,'0')}</td><td class="td-name">${c.name}</td><td style="font-size:10px;color:var(--text3)">${c.project}</td><td style="font-size:11px">${c.group||'-'}</td><td><span class="bd" style="background:${c.active?'rgba(45,106,79,0.2)':'rgba(100,100,100,0.15)'}; color:${c.active?'var(--accent3)':'var(--text3)'}">${c.active?'Y활성':'N비활성'}</span></td><td style="font-size:11px">${sub?.attendance||'-'}</td><td>${sub?`<b style="color:var(--accent)">${t}</b>`:'-'}</td><td>${gr?`<span style="font-family:Bebas Neue;font-size:14px;color:${gradeColor(gr)}">${gr}</span>`:'-'}</td><td><span class="bd ${sub?'bd-done':'bd-todo'}">${sub?'완료':'미완료'}</span></td><td><button onclick="event.stopPropagation();openCandModal('${c.uid}')" style="padding:3px 8px;background:var(--surface2);border:1px solid var(--border);font-size:10px;cursor:pointer;font-family:inherit">상세</button></td></tr>`;
   }).join('');
 }
 function adminListFilter(sel){const tb=document.querySelector('#al-tbl tbody');if(tb)tb.innerHTML=renderALRows(sel.value);}
@@ -1211,8 +1176,6 @@ function renderAdminSheets(){
         <button class="save-btn" style="width:auto;padding:10px 20px;margin-top:0;background:var(--accent2)" onclick="adminSync()">🔄 전체 동기화 · Full Sync</button>
       </div>
       <div id="sh-status" style="font-size:12px;color:var(--text3);margin-bottom:18px"></div>
-
-
     </div>`;
 }
 function saveSheetsCfg(){
@@ -1231,14 +1194,14 @@ async function adminSync(){
 /* ─────────────────────────────────────────────
    MODAL
 ───────────────────────────────────────────── */
-function openCandModal(candId){
-  const c=CANDIDATES.find(x=>x.id===candId);
-  const allE=Object.keys(REVIEWERS).map(rvId=>({rvId,ev:evalData[getKey(rvId,candId)]})).filter(x=>x.ev?.submitted);
+function openCandModal(candUid){
+  const c=CANDIDATES.find(x=>x.uid===candUid);
+  const allE=Object.keys(REVIEWERS).map(rvId=>({rvId,ev:evalData[getKey(rvId,candUid)]})).filter(x=>x.ev?.submitted);
   const ev=allE[0]?.ev;const total=ev?calcTotal(ev):null;const gr=ev?getGrade(total):null;
   document.getElementById('modal-content').innerHTML=`
     <div class="modal-name">${c.name} <span style="font-size:13px;font-weight:400;color:var(--text3)">${c.active?'':'(비활성)'}</span></div>
     <div class="modal-sub">${c.id} · ${c.ojt1||''} → ${c.ojt2||''} · 그룹: ${c.group||'-'}</div>
-    <div style="font-size:12px;color:var(--text3);margin-bottom:16px">${c.project||''}</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:16px">과제명: ${c.project||''}</div>
     ${ev?`
       <div class="modal-total-row">
         <span class="modal-total-lbl">총점 · Total</span>
