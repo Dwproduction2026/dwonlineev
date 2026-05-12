@@ -376,7 +376,10 @@ body::after {
       </div>
       <div class="sb-search-wrap" id="rv-sw"><input class="sb-search" placeholder="🔍 이름 검색 · Search" oninput="filterCands(this.value)"></div>
       <div class="sb-list" id="cand-list"></div>
-      <div class="sb-foot"><button class="sb-foot-btn red" onclick="logout()">로그아웃 · Logout</button></div>
+      <div class="sb-foot">
+        <button class="sb-foot-btn" id="bulk-submit-btn" onclick="bulkSubmitAll()" style="background:rgba(42,125,79,0.2);color:#6effc4;margin-bottom:6px;">✅ 전체 최종제출 · Submit All</button>
+        <button class="sb-foot-btn red" onclick="logout()">로그아웃 · Logout</button>
+      </div>
     </div>
     <div class="main-area">
       <div class="main-hdr">
@@ -574,7 +577,7 @@ async function syncAll(silent) {
         ojt2:    String(row[3]||'').trim(),
         project: String(row[4]||'').trim(),
         group:   String(row[5]||'').trim(),
-        active:  String(row[6]||'Y').trim().toUpperCase() !== 'N',
+        active:  String(row[6]||'').trim().toUpperCase() === 'Y',
       })).filter(c=>c.id&&c.name);
     }
 
@@ -583,8 +586,8 @@ async function syncAll(silent) {
       REVIEWERS = {};
       rvRows.forEach(row => {
         const id = String(row[0]||'').trim(); if(!id) return;
-        const activeFlag = String(row[5]||'Y').trim().toUpperCase();
-        if (activeFlag === 'N') return; // 비활성 평가자는 로그인 불가
+        const activeFlag = String(row[5]||'').trim().toUpperCase();
+        if (activeFlag !== 'Y') return; // Y일 때만 활성 평가자로 등록
         REVIEWERS[id] = {
           name:   String(row[1]||'').trim(),
           dept:   String(row[2]||'').trim(),
@@ -1010,6 +1013,89 @@ function submitEval(){
   if(dot2){ dot2.style.background='var(--accent3)'; }
   const txt=document.getElementById('as-txt');
   if(txt){ txt.textContent='✅ 최종 제출 완료'; }
+}
+
+/* 전체 일괄 최종제출 */
+function bulkSubmitAll(){
+  if(!currentUser) return;
+  const myCands = getMyCandidates();
+  if(!myCands.length){ showToast('⚠ 배정된 평가 대상자가 없습니다'); return; }
+
+  // 1. 미완료 항목 체크 (모든 점수 1점 이상)
+  const incomplete = [];
+  myCands.forEach(c => {
+    const ev = getEval(currentUser.id, c.id);
+    const allScored = CRITERIA.every(cr => (ev.scores[cr.key]||0) >= 1);
+    if(!allScored) incomplete.push(c.name);
+  });
+
+  // 2. 미완료 있으면 경고 모달
+  if(incomplete.length > 0){
+    document.getElementById('modal-content').innerHTML = `
+      <div style="font-size:18px;font-weight:800;margin-bottom:12px;color:var(--red)">⚠ 평가 미완료 항목 있음</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.8">
+        아래 대상자의 모든 평가 항목을 입력해야 최종제출이 가능합니다.<br>
+        <span style="font-size:11px;color:var(--text3)">All criteria must be scored before final submission.</span>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--red);padding:14px;margin-bottom:16px">
+        ${incomplete.map(name=>`<div style="padding:4px 0;font-size:13px;font-weight:700;color:var(--red)">• ${name}</div>`).join('')}
+      </div>
+      <button onclick="closeModal()" style="width:100%;padding:12px;background:var(--accent);color:#fff;border:none;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">확인 · OK</button>`;
+    document.getElementById('modal').classList.add('open');
+    return;
+  }
+
+  // 3. 이미 전체 제출된 경우
+  const alreadyAll = myCands.every(c => getEval(currentUser.id, c.id).submitted);
+  if(alreadyAll){ showToast('✅ 이미 모든 평가가 최종제출 완료되었습니다'); return; }
+
+  // 4. 최종 확인 모달
+  const notSubmitted = myCands.filter(c => !getEval(currentUser.id, c.id).submitted);
+  document.getElementById('modal-content').innerHTML = `
+    <div style="font-size:18px;font-weight:800;margin-bottom:12px">✅ 전체 최종제출 확인</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.8">
+      ${notSubmitted.length}명의 평가를 전체 최종제출합니다.<br>최종제출 후에는 수정이 불가능합니다.<br>
+      <span style="font-size:11px;color:var(--text3)">Submit all ${notSubmitted.length} evaluations. This cannot be undone.</span>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);padding:14px;margin-bottom:16px">
+      ${notSubmitted.map(c=>{
+        const ev=getEval(currentUser.id,c.id);
+        const total=calcTotal(ev);
+        const grade=getGrade(total);
+        return`<div style="padding:5px 0;font-size:13px;display:flex;justify-content:space-between;border-bottom:1px solid var(--border)">
+          <span style="font-weight:700">${c.name}</span>
+          <span><b style="color:var(--accent)">${total}점</b> <span style="color:var(--text3);font-size:11px">(${grade})</span></span>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="display:flex;gap:10px">
+      <button onclick="closeModal()" style="flex:1;padding:12px;background:var(--surface2);color:var(--text2);border:1px solid var(--border);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">취소 · Cancel</button>
+      <button onclick="confirmBulkSubmit()" style="flex:2;padding:12px;background:var(--accent3);color:#fff;border:none;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">✅ 전체 최종제출 · Submit All</button>
+    </div>`;
+  document.getElementById('modal').classList.add('open');
+}
+
+async function confirmBulkSubmit(){
+  closeModal();
+  if(!currentUser) return;
+  const myCands = getMyCandidates();
+  let count = 0;
+  for(const c of myCands){
+    const ev = getEval(currentUser.id, c.id);
+    if(ev.submitted) continue;
+    // 현재 선택된 인원이면 입력창 텍스트 반영
+    if(selectedCandId === c.id){
+      const g=document.getElementById('ta-good'), im=document.getElementById('ta-improve');
+      if(g) ev.good=g.value; if(im) ev.improve=im.value;
+    }
+    ev.submitted=true; ev.submittedAt=new Date().toISOString();
+    saveLS();
+    await pushToSheets(c, ev, true);
+    count++;
+  }
+  renderCandList(); updateRvProg();
+  showToast('✅ '+count+'명 전체 최종제출 완료!');
+  if(selectedCandId) renderEvalForm();
 }
 
 /* ─────────────────────────────────────────────
