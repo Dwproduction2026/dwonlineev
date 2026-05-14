@@ -624,35 +624,67 @@ async function syncAll(silent) {
   }
 }
 
-// 다른 기기에서 로그인 시: 평가결과 시트에서 본인 평가 데이터 복원
+// 다른 기기에서 로그인 시: 임시저장 + 평가결과 시트에서 본인 평가 데이터 복원
 async function loadMyEvalFromSheet(rvId) {
   if (!SHEETS_CFG.scriptUrl) return;
-  try {
-    const rows = await fetchSheet('평가결과');
-    if (!rows.length) return;
-    // row 구조: A평가자사번(0) D대상자사번(3) E대상자명(4) F1차OJT(5) G2차OJT(6) H과제명(7) I평가구분(8)
-    //           J~R 점수(9~17) S총점(18) T등급(19) U잘한점(20) V개선점(21) W참석여부(22) X제출시각(23) Y저장상태(24)
-    const SCORE_KEYS = ['c1','c2','l1','l2','l3','f1','f2','d1','p1'];
-    rows.forEach(row => {
-      if (String(row[0]||'').trim() !== String(rvId).trim()) return;
-      const candSabun  = String(row[3]||'').trim();
-      const evalType   = String(row[8]||'').trim(); // I열 평가구분
-      const candUid    = candSabun + ':' + evalType; // uid 재조합
-      if (!candSabun) return;
-      const k = getKey(rvId, candUid);
-      const isFinal = String(row[24]||'').trim() === '최종제출';
-      if (evalData[k]?.submitted && !isFinal) return;
-      const scores = {};
-      SCORE_KEYS.forEach((key, i) => { scores[key] = Number(row[9 + i]||0); });
-      evalData[k] = {
+
+  const SCORE_KEYS = ['c1','c2','l1','l2','l3','f1','f2','d1','p1'];
+
+  // row → evalData 파싱 헬퍼
+  function parseRow(row) {
+    const candSabun = String(row[3]||'').trim();
+    const evalType  = String(row[8]||'').trim();
+    const candUid   = candSabun + ':' + evalType;
+    if (!candSabun) return null;
+    const isFinal = String(row[24]||'').trim() === '최종제출';
+    const scores = {};
+    SCORE_KEYS.forEach((key, i) => { scores[key] = Number(row[9 + i]||0); });
+    return {
+      candUid, isFinal,
+      data: {
         scores,
         good:        String(row[20]||''),
         improve:     String(row[21]||''),
         attendance:  String(row[22]||''),
         submittedAt: String(row[23]||''),
         submitted:   isFinal,
-      };
+      }
+    };
+  }
+
+  try {
+    // 임시저장 + 평가결과 동시 불러오기
+    const [draftRows, finalRows] = await Promise.all([
+      fetchSheet('임시저장'),
+      fetchSheet('평가결과'),
+    ]);
+
+    // 1. 임시저장 먼저 복원 (최종제출이 없는 경우 대비)
+    draftRows.forEach(row => {
+      if (String(row[0]||'').trim() !== String(rvId).trim()) return;
+      const parsed = parseRow(row);
+      if (!parsed) return;
+      const k = getKey(rvId, parsed.candUid);
+      // 이미 최종제출된 데이터가 있으면 임시저장으로 덮어쓰지 않음
+      if (evalData[k]?.submitted) return;
+      evalData[k] = parsed.data;
     });
+
+    // 2. 평가결과로 덮어쓰기 (최종제출이 항상 우선)
+    finalRows.forEach(row => {
+      if (String(row[0]||'').trim() !== String(rvId).trim()) return;
+      const parsed = parseRow(row);
+      if (!parsed) return;
+      const k = getKey(rvId, parsed.candUid);
+      // 최종제출 데이터는 항상 우선 적용
+      if (parsed.isFinal) {
+        evalData[k] = parsed.data;
+      } else if (!evalData[k]?.submitted) {
+        // 평가결과 시트에 임시저장 상태면, 로컬에 없을 때만 복원
+        evalData[k] = parsed.data;
+      }
+    });
+
     saveLS();
   } catch(e) {
     console.warn('평가 데이터 복원 실패:', e);
