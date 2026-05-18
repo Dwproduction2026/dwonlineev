@@ -974,24 +974,17 @@ function renderEvalForm(){
           <div style="font-size:11px;color:var(--text3);margin-top:3px">
             점수 입력 시 <b>기기에 자동저장</b>됩니다.<br>
             <b>임시저장</b>을 누르면 구글 시트에 저장되어 다른 기기에서도 불러올 수 있습니다.<br>
-            <b>최종 제출</b> 후에는 수정이 불가능합니다.
+            최종 제출은 좌측 하단 <b>✅ 전체 최종제출</b> 버튼을 이용해주세요.
           </div>
         </div>
         <div id="as-dot2" style="width:10px;height:10px;border-radius:50%;background:${ev.submitted?'var(--accent3)':'var(--border2)'};flex-shrink:0;transition:background .3s"></div>
       </div>
-      <div style="display:flex;gap:10px;margin-bottom:10px">
-        <button onclick="saveDraftToSheet()" 
-          style="flex:1;padding:14px;border:2px solid var(--accent);background:var(--surface);font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;color:var(--accent);transition:all .2s;"
-          onmouseover="this.style.background='rgba(232,119,34,0.08)'" onmouseout="this.style.background='var(--surface)'">
-          💾 임시저장 · Save Draft
-        </button>
-        <button id="submit-btn-bottom" onclick="submitEval()"
-          style="flex:2;padding:14px;border:none;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.5px;transition:all .2s;
-            background:${ev.submitted?'var(--accent3)':'var(--accent)'};color:#fff;">
-          ${ev.submitted ? '✅ 최종 제출 완료 · Submitted' : '✅ 최종 제출하기 · Final Submit'}
-        </button>
-      </div>
-      ${ev.submitted?`<div style="text-align:center;font-size:11px;color:var(--accent3);margin-top:8px;font-weight:700">제출 완료 · ${ev.submittedAt?new Date(ev.submittedAt).toLocaleString('ko'):''}</div>`:''}
+      <button onclick="saveDraftToSheet()"
+        style="width:100%;padding:14px;border:2px solid var(--accent);background:var(--surface);font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;color:var(--accent);transition:all .2s;"
+        onmouseover="this.style.background='rgba(232,119,34,0.08)'" onmouseout="this.style.background='var(--surface)'">
+        💾 임시저장 · Save Draft
+      </button>
+      ${ev.submitted?`<div style="text-align:center;font-size:11px;color:var(--accent3);margin-top:10px;font-weight:700">✅ 최종 제출 완료 · ${ev.submittedAt?new Date(ev.submittedAt).toLocaleString('ko'):''}</div>`:''}
     </div>`;
   document.getElementById('ta-good').addEventListener('input',triggerAS);
   document.getElementById('ta-improve').addEventListener('input',triggerAS);
@@ -1071,15 +1064,11 @@ function submitEval(){
   const total=calcTotal(ev);
   showToast('✅ '+c.name+' 님 최종 제출 완료 · '+total+'점 ('+getGrade(total)+')');
   pushToSheets(c, ev, true);
-  // 버튼 및 상태 표시 업데이트
-  const btn=document.getElementById('submit-btn-bottom');
-  if(btn){ btn.textContent='✅ 최종 제출 완료 · Submitted'; btn.style.background='var(--accent3)'; }
   const dot=document.getElementById('as-dot');
   if(dot){ dot.style.background='var(--accent3)'; }
-  const dot2=document.getElementById('as-dot2');
-  if(dot2){ dot2.style.background='var(--accent3)'; }
   const txt=document.getElementById('as-txt');
   if(txt){ txt.textContent='✅ 최종 제출 완료'; }
+  renderEvalForm(); // 폼 갱신 (제출 완료 상태 반영)
 }
 
 /* 전체 일괄 최종제출 */
