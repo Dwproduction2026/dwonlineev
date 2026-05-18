@@ -522,7 +522,7 @@ let CANDIDATES = [
   {id:'I2025004',name:'윤재원', ojt1:'데이터팀',ojt2:'개발팀',    project:'고객 이탈 예측 모델링',group:'B그룹',active:true},
 ];
 let SHEETS_CFG = {
-  scriptUrl: 'https://script.google.com/macros/s/AKfycbxyXcc6vwk8KWfEH8zpUJU3d4VtyPvbr9MDTBGU7T-o1oX0ReqOr0LQQrvZP8I-7fCfiw/exec',
+  scriptUrl: 'https://script.google.com/macros/s/AKfycbyLLRJFVx5oYyE-s3kIRo2yHcYYt4pWL7FOeacVHqN7Z_AIzAtNZQNTeGuhAAlFCr9q2w/exec',
   sheetUrl:  'https://docs.google.com/spreadsheets/d/1Z2vlrvkT3d8oq7JEQDPHLbJ7TQHgPfErpS893KbsiqM/edit?usp=sharing',
   connected: true
 };
@@ -631,11 +631,10 @@ async function loadMyEvalFromSheet(rvId) {
   const SCORE_KEYS = ['c1','c2','l1','l2','l3','f1','f2','d1','p1'];
 
   // row → evalData 파싱 헬퍼
+  // D열(row[3])에 UID(사번:평가구분)가 저장됨
   function parseRow(row) {
-    const candSabun = String(row[3]||'').trim();
-    const evalType  = String(row[8]||'').trim();
-    const candUid   = candSabun + ':' + evalType;
-    if (!candSabun) return null;
+    const candUid = String(row[3]||'').trim(); // D열 = UID 직접 사용
+    if (!candUid) return null;
     const isFinal = String(row[24]||'').trim() === '최종제출';
     const scores = {};
     SCORE_KEYS.forEach((key, i) => { scores[key] = Number(row[9 + i]||0); });
@@ -1167,23 +1166,24 @@ async function pushToSheets(cand, ev, isFinal){
   const submittedAt = isFinal ? (ev.submittedAt||new Date().toISOString()) : '';
   const row=[
     rv.id, rv.name, rv.dept||'',
-    cand.id, cand.name, cand.ojt1||'', cand.ojt2||'', cand.project||'',
-    cand.evalType||'',  // 평가구분
+    cand.uid,   // D열 = UID(사번:평가구분) → upsert 키로 사용
+    cand.name, cand.ojt1||'', cand.ojt2||'', cand.project||'',
+    cand.evalType||'',  // I열 평가구분
     ev.scores.c1||0, ev.scores.c2||0,
     ev.scores.l1||0, ev.scores.l2||0, ev.scores.l3||0,
     ev.scores.f1||0, ev.scores.f2||0,
     ev.scores.d1||0, ev.scores.p1||0,
     total, grade,
     ev.good||'', ev.improve||'',
-    ev.attendance||'',  // 참석여부
-    submittedAt,        // 제출시각
-    status              // 저장상태
+    ev.attendance||'',
+    submittedAt,
+    status,
+    cand.id,    // Y열 = 실제 사번 (참고용)
   ];
   try {
     await fetch(SHEETS_CFG.scriptUrl, {
       method:'POST',
       headers:{'Content-Type':'text/plain'},
-      // candId로 uid(사번+평가구분)를 사용해 upsert 키로 활용
       body: JSON.stringify({ type:'eval_upsert', rvId:rv.id, candId:cand.uid, row })
     });
     if(isFinal) showToast('📊 최종제출 완료 · Saved to Sheets');
