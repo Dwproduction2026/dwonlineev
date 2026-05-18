@@ -1184,7 +1184,7 @@ async function pushToSheets(cand, ev, isFinal){
     await fetch(SHEETS_CFG.scriptUrl, {
       method:'POST',
       headers:{'Content-Type':'text/plain'},
-      body: JSON.stringify({ type:'eval_upsert', rvId:rv.id, candId:cand.uid, row })
+      body: JSON.stringify({ type:'eval_upsert', sheet: isFinal ? '평가결과' : '임시저장', rvId:rv.id, candId:cand.uid, row })
     });
     if(isFinal) showToast('📊 최종제출 완료 · Saved to Sheets');
   } catch(e){
