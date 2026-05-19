@@ -106,6 +106,7 @@ body::after {
 .sb-item-badges { display:flex; gap:5px; margin-top:5px; flex-wrap:wrap; align-items:center; }
 .bd { padding:2px 7px; font-size:10px; font-weight:700; }
 .bd-done { background:rgba(42,125,79,0.35); color:#6effc4; }
+.bd-drafted { background:rgba(232,119,34,0.25); color:#ffd4a0; }
 .bd-todo { background:rgba(200,65,10,0.2); color:#ffbbbb; }
 .bd-grade { background:rgba(255,255,255,0.1); color:#fff; font-size:10px; font-weight:800; }
 .bd-score { font-size:10px; color:rgba(255,255,255,0.45); }
@@ -664,9 +665,8 @@ async function loadMyEvalFromSheet(rvId) {
       const parsed = parseRow(row);
       if (!parsed) return;
       const k = getKey(rvId, parsed.candUid);
-      // 이미 최종제출된 데이터가 있으면 임시저장으로 덮어쓰지 않음
       if (evalData[k]?.submitted) return;
-      evalData[k] = parsed.data;
+      evalData[k] = {...parsed.data, drafted: true}; // 임시저장 표시
     });
 
     // 2. 평가결과로 덮어쓰기 (최종제출이 항상 우선)
@@ -744,7 +744,7 @@ function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remo
 function getKey(rv,cand){return rv+':'+cand;} // cand = uid (사번+평가구분)
 function getEval(rvId,candUid){
   const k=getKey(rvId,candUid);
-  if(!evalData[k]){evalData[k]={scores:{},attendance:'',good:'',improve:'',submitted:false,submittedAt:''};CRITERIA.forEach(c=>{evalData[k].scores[c.key]=0;});}
+  if(!evalData[k]){evalData[k]={scores:{},attendance:'',good:'',improve:'',submitted:false,submittedAt:'',drafted:false};CRITERIA.forEach(c=>{evalData[k].scores[c.key]=0;});}
   return evalData[k];
 }
 function calcTotal(ev){return Math.round(CRITERIA.reduce((s,c)=>s+(ev.scores[c.key]||0)*(c.weight/c.max),0)*10)/10;}
@@ -810,11 +810,20 @@ function renderCandList(){
   el.innerHTML=filteredCands.map(c=>{
     const ev=getEval(currentUser.id,c.uid);
     const total=calcTotal(ev);const grade=ev.submitted?getGrade(total):null;const on=selectedCandId===c.uid;
+    // 3단계 배지: 미완료 / 완료(임시저장) / 완료(최종제출)
+    let badgeClass, badgeText;
+    if(ev.submitted){
+      badgeClass='bd-done'; badgeText='✓ 완료(최종제출)';
+    } else if(ev.drafted){
+      badgeClass='bd-drafted'; badgeText='💾 완료(임시저장)';
+    } else {
+      badgeClass='bd-todo'; badgeText='미완료';
+    }
     return`<div class="sb-item${on?' on':''}" onclick="selectCand('${c.uid}')">
       <div class="sb-item-name">${c.name}</div>
       <div class="sb-item-sub">${c.evalType||''} · ${c.ojt1||''} → ${c.ojt2||''}</div>
       <div class="sb-item-badges">
-        <span class="bd ${ev.submitted?'bd-done':'bd-todo'}">${ev.submitted?'✓ 완료':'미완료'}</span>
+        <span class="bd ${badgeClass}">${badgeText}</span>
         ${ev.submitted?`<span class="bd bd-grade">${grade}</span><span class="bd-score">${total}점</span>`:''}
       </div>
     </div>`;
@@ -1049,9 +1058,12 @@ function saveDraftToSheet(){
   autoSave();
   const ev=getEval(currentUser.id,selectedCandId);
   if(ev.submitted){ showToast('이미 최종제출된 평가입니다'); return; }
+  ev.drafted=true;
+  saveLS();
   const c=CANDIDATES.find(x=>x.uid===selectedCandId);
   if(!c) return;
   pushToSheets(c, ev, false);
+  renderCandList(); // 사이드바 배지 갱신
   showToast('💾 임시저장 완료 · Draft saved to Sheets');
 }
 function submitEval(){
@@ -1059,6 +1071,7 @@ function submitEval(){
   autoSave();
   const ev=getEval(currentUser.id,selectedCandId);
   ev.submitted=true; ev.submittedAt=new Date().toISOString();
+  ev.drafted=false; // 최종제출 시 임시저장 상태 해제
   saveLS(); renderCandList(); updateRvProg();
   const c=CANDIDATES.find(x=>x.uid===selectedCandId);
   const total=calcTotal(ev);
@@ -1145,6 +1158,7 @@ async function confirmBulkSubmit(){
       if(g) ev.good=g.value; if(im) ev.improve=im.value;
     }
     ev.submitted=true; ev.submittedAt=new Date().toISOString();
+    ev.drafted=false; // 최종제출 시 임시저장 상태 해제
     saveLS();
     await pushToSheets(c, ev, true);
     count++;
