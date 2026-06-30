@@ -385,7 +385,10 @@ body::after {
     <div class="main-area">
       <div class="main-hdr">
         <div><div class="main-title" id="rv-hdr-title">평가 대상자를 선택하세요</div><div class="main-sub" id="rv-hdr-sub">좌측 목록에서 평가할 인원을 선택해 주세요</div></div>
-        <div class="autosave-ind" id="as-ind" style="display:none"><div class="as-dot" id="as-dot"></div><span id="as-txt">자동저장 대기</span></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <button onclick="openHistoryModal()" style="padding:8px 14px;background:var(--surface2);color:var(--text2);border:1px solid var(--border);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;" onmouseover="this.style.background='var(--surface3)'" onmouseout="this.style.background='var(--surface2)'">🕘 평가 이력 보기</button>
+          <div class="autosave-ind" id="as-ind" style="display:none"><div class="as-dot" id="as-dot"></div><span id="as-txt">자동저장 대기</span></div>
+        </div>
       </div>
       <div class="main-body" id="rv-body">
         <div class="empty-state"><div class="empty-icon">📋</div><div class="empty-txt">좌측에서 평가할 인원을 선택해 주세요 · Select a candidate from the left</div></div>
@@ -411,6 +414,14 @@ body::after {
 <!-- MODAL -->
 <div class="modal-ov" id="modal">
   <div class="modal"><button class="modal-close" onclick="closeModal()">✕</button><div id="modal-content"></div></div>
+</div>
+
+<!-- HISTORY MODAL -->
+<div class="modal-ov" id="historyModal">
+  <div class="modal" style="max-width:880px">
+    <button class="modal-close" onclick="closeHistoryModal()">✕</button>
+    <div id="history-modal-content"></div>
+  </div>
 </div>
 
 <!-- TOAST -->
@@ -693,7 +704,7 @@ async function loadMyEvalFromSheet(rvId) {
 // 앱 시작 시 자동 동기화
 window.addEventListener('load', async function() {
   if (!SHEETS_CFG.scriptUrl) return;
-  showBanner('⏳ 구글 시트에서 데이터를 불러오는 중... · Loading from Google Sheets...', '#E87722');
+  showBanner('⏳ 데이터 로딩중... · Loading...', '#E87722');
   const ok = await syncAll(true);
   showBanner(ok ? '✅ 데이터 동기화 완료 · Sync Complete' : '⚠ 동기화 실패 · Sync Failed', ok ? '#2A7D4F' : '#C8410A', 2500);
   // 30초마다 백그라운드 자동 갱신 (여러 명 동시 사용 대응)
@@ -780,7 +791,7 @@ function loginReviewer(){
       document.getElementById('rv-dept').textContent=currentUser.dept||id;
       // 다른 기기 접속 시 시트에서 본인 평가 데이터 복원
       if (SHEETS_CFG.scriptUrl) {
-        showBanner('⏳ 이전 평가 데이터 불러오는 중...', '#E87722');
+        showBanner('⏳ 데이터 로딩중... · Loading...', '#E87722');
         await loadMyEvalFromSheet(id);
         showBanner('✅ 데이터 복원 완료', '#2A7D4F', 2000);
       }
@@ -1333,6 +1344,135 @@ function openCandModal(candUid){
 }
 function closeModal(){document.getElementById('modal').classList.remove('open');}
 document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal();});
+
+/* ══ 평가 이력 보기 · Evaluation History ══
+   '평가결과' 시트에서 사번 기준으로 조회
+   row 레이아웃: [0]평가자사번 [1]평가자명 [2]부서 [3]UID(사번:평가구분)
+               [4]대상자명 [5]사번 [6]OJT1 [7]OJT2 [8]과제명 [9..17]점수(c1~p1)
+               [18]총점 [19]등급 [20]잘한점 [21]보완할점 [22]참석여부
+               [23]제출시각 [24]상태
+*/
+const ATTEND_LABEL = {
+  '참석':     '참석 (Attended)',
+  '일부참석': '일부참석 (Partial)',
+  '불참':     '불참 (Absent)',
+};
+
+let historySheetRows = null;
+
+function openHistoryModal(){
+  historySheetRows = null; // 매번 최신 데이터 재조회
+  const c = CANDIDATES.find(x=>x.uid===selectedCandId);
+  buildHistoryModal(c ? c.id : '');
+  document.getElementById('historyModal').classList.add('open');
+}
+function closeHistoryModal(){document.getElementById('historyModal').classList.remove('open');}
+document.getElementById('historyModal').addEventListener('click',e=>{if(e.target===document.getElementById('historyModal'))closeHistoryModal();});
+
+function parseHistoryRow(row){
+  const SCORE_KEYS = CRITERIA.map(c=>c.key);
+  const scores = {};
+  SCORE_KEYS.forEach((key,i)=>{ scores[key] = Number(row[9+i]||0); });
+  // 사번은 UID(row[3])에서 ':' 앞 부분 추출
+  const uid    = String(row[3]||'').trim();
+  const empId  = uid.split(':')[0] || String(row[5]||'').trim(); // row[5]도 fallback
+  return {
+    rvId:      String(row[0]||'').trim(),
+    rvName:    String(row[1]||'').trim(),
+    rvDept:    String(row[2]||'').trim(),
+    uid,
+    candName:  String(row[4]||'').trim(),
+    empId,
+    project:   String(row[8]||'').trim(),
+    evalType:  uid.split(':')[1] || '',
+    total:     Number(row[18]||0),
+    grade:     String(row[19]||'').trim(),
+    good:      String(row[20]||''),
+    improve:   String(row[21]||''),
+    attendance:String(row[22]||''),
+    status:    String(row[24]||'').trim(),
+    scores,
+  };
+}
+
+async function buildHistoryModal(initialId){
+  const empIds = Array.from(new Set(CANDIDATES.map(c=>c.id))).sort();
+  const sel = (initialId && empIds.includes(initialId)) ? initialId : (empIds[0]||'');
+  document.getElementById('history-modal-content').innerHTML = `
+    <div class="modal-name">🕘 평가 이력 보기 · Evaluation History</div>
+    <div class="modal-sub" style="margin-bottom:18px">대상자를 선택하면 평가 이력을 확인할 수 있습니다.</div>
+    <div class="form-group" style="max-width:340px;margin-bottom:20px">
+      <label class="form-label">대상자 사번 · Employee ID</label>
+      <select class="form-input" id="history-empid-sel" onchange="renderHistoryList(this.value)">
+        ${empIds.map(id=>{
+          const c = CANDIDATES.find(x=>x.id===id);
+          return `<option value="${id}" ${id===sel?'selected':''}>${id} · ${c?c.name:''}</option>`;
+        }).join('')}
+      </select>
+    </div>
+    <div id="history-list-wrap">
+      <div class="empty-state" style="padding:40px"><div class="empty-txt">데이터 로딩중... · Loading...</div></div>
+    </div>`;
+  await renderHistoryList(sel);
+}
+
+async function renderHistoryList(empId){
+  const wrap = document.getElementById('history-list-wrap');
+  if(!wrap) return;
+  wrap.innerHTML = `<div class="empty-state" style="padding:40px"><div class="empty-txt">데이터 로딩중... · Loading...</div></div>`;
+
+  if(historySheetRows === null){
+    try { historySheetRows = await fetchSheet('평가결과'); }
+    catch(e){ historySheetRows = []; }
+  }
+
+  const records = historySheetRows
+    .map(parseHistoryRow)
+    .filter(r => r.empId === String(empId) && r.status === '최종제출');
+
+  records.reverse(); // 시트 아래쪽(최신) 먼저
+
+  if(!records.length){
+    wrap.innerHTML = `<div class="empty-state" style="padding:40px"><div class="empty-icon">📭</div><div class="empty-txt">아직 제출된 평가 이력이 없습니다.<br><span style="font-size:12px;color:var(--text4)">No submitted evaluation history yet.</span></div></div>`;
+    return;
+  }
+
+  wrap.innerHTML = records.map((r,ri)=>`
+    <div style="border:1px solid var(--border);border-radius:2px;margin-bottom:14px;overflow:hidden">
+      <div style="background:var(--surface2);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--border)">
+        <div style="font-size:13px;font-weight:700">
+          📌 ${r.project||'(과제명 없음)'}
+          <span style="color:var(--text3);font-weight:500"> · ${r.evalType||'평가구분 미지정'}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:12px;color:var(--text2)">평가자: <b>${r.rvName||r.rvId}</b>${r.rvDept?` (${r.rvDept})`:''}</span>
+          <span style="font-size:13px;font-weight:800;border:1px solid var(--border2);padding:3px 10px">${r.grade||'-'}</span>
+          <span style="font-size:13px;font-weight:800">${r.total} / 100</span>
+        </div>
+      </div>
+      <div style="padding:14px 16px">
+        <div class="modal-score-grid" style="margin-bottom:12px">
+          ${CRITERIA.map((cr,ci)=>`
+          <div class="modal-si" style="cursor:pointer;flex-direction:column;align-items:flex-start;gap:6px" onclick="var d=document.getElementById('hd-${ri}-${ci}');d.style.display=d.style.display==='none'?'block':'none'">
+            <div style="display:flex;justify-content:space-between;align-items:center;width:100%">
+              <span class="modal-sk">${cr.key==='c1'?'공통1':cr.key==='c2'?'공통2':cr.key==='l1'?'학습/실행1':cr.key==='l2'?'학습/실행2':cr.key==='l3'?'학습/실행3':cr.key==='f1'?'피드백수용1':cr.key==='f2'?'피드백수용2':cr.key==='d1'?'전달력':cr.key==='p1'?'참여도':cr.key} <small style="color:var(--text4)">(${cr.key==='c1'?'Common 1':cr.key==='c2'?'Common 2':cr.key==='l1'?'Learn 1':cr.key==='l2'?'Learn 2':cr.key==='l3'?'Learn 3':cr.key==='f1'?'Feedback 1':cr.key==='f2'?'Feedback 2':cr.key==='d1'?'Delivery':cr.key==='p1'?'Participation':cr.key}) ${cr.weight}%</small> <small style="color:var(--text4)">🔍</small></span>
+              <span class="modal-sv">${r.scores[cr.key]||0}<small style="font-size:10px;color:var(--text3)">/${cr.max}</small></span>
+            </div>
+            <div id="hd-${ri}-${ci}" style="display:none;width:100%;padding:8px 10px;background:var(--bg);border:1px dashed var(--border2);font-size:11px;line-height:1.7;border-radius:2px">
+              <div style="margin-bottom:4px"><b>KO</b> ${cr.ko.replace(/·.*$/,'').trim().replace(/^[가-힣\/]+\d+\s*/,'')}</div>
+              <div style="color:var(--text3)"><b>EN</b> ${cr.en}</div>
+            </div>
+          </div>`).join('')}
+        </div>
+        ${r.attendance?`<div style="padding:6px 12px;background:var(--surface2);border:1px solid var(--border);margin-bottom:12px;font-size:12px;display:inline-block"><b>참석여부(Attendance):</b> ${ATTEND_LABEL[r.attendance]||r.attendance}</div>`:''}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div><div class="modal-cl">잘한점 · Strengths</div><div class="modal-cb">${r.good||'(없음)'}</div></div>
+          <div><div class="modal-cl">보완할점 · Improvement</div><div class="modal-cb">${r.improve||'(없음)'}</div></div>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
 </script>
 </body>
 </html>
